@@ -34,4 +34,8 @@ public class BankAccount {
     public double getBalance() {
         return balance;
     }
+
+    public double getBonus() {
+        return balance+10.0;
+    }
 }
