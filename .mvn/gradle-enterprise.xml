@@ -1,0 +1,23 @@
+<gradleEnterprise>
+    <server>
+        <url>https://ge.kube.dev.mmicse.com</url>
+        <allowUntrusted>false</allowUntrusted>
+    </server>
+    <buildScan>
+        <publish>ALWAYS</publish>
+        <capture>
+            <goalInputFiles>true</goalInputFiles>
+        </capture>
+        <backgroundBuildScanUpload>#{env['CI'] == null}</backgroundBuildScanUpload>
+    </buildScan>
+    <buildCache>
+        <local>
+            <enabled>true</enabled>
+            <storeEnabled>true</storeEnabled>
+        </local>
+        <remote>
+            <enabled>true</enabled>
+            <storeEnabled>#{env['CI'] != null}</storeEnabled>
+        </remote>
+    </buildCache>
+</gradleEnterprise>

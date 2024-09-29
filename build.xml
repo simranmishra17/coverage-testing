@@ -1,0 +1,1065 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="ema" basedir="." xmlns:ac="antlib:net.sf.antcontrib" xmlns:if="ant:if">
+    <taskdef resource="net/sf/antcontrib/antlib.xml" uri="antlib:net.sf.antcontrib" onerror="fail" >
+        <classpath path="lib/ant-contrib-1.0b3.jar"/>
+    </taskdef>
+
+    <property file="local.build.properties"/>
+    <property file="build.properties"/>
+
+    <property name="build.dir" value="${basedir}/build"/>
+    <property name="src.property.overrides.dir" location="${basedir}/src/overrides"/>
+    <property name="build.property.overrides.dir" location="${build.dir}/ema/WEB-INF/classes/overrides"/>
+    <property name="property.overrides.dir" value="${src.property.overrides.dir},${build.property.overrides.dir}"/>
+    <property name="tomcat.dir" location="/usr/local/tomcat/default"/>
+    <property name="tomcat.webapps.dir" value="${tomcat.dir}/webapps"/>
+    <property name="ema.war" value="ema-prime/ema-artifacts/ema-web/target/ema.war"/>
+    <property name="ema.war.dist" value="${build.dir}/ema.war"/>
+    <property name="ema.installer.jar" value="ema-prime/ema-artifacts/ema-installer/target/ema-installer.jar"/>
+    <property name="ema.installer.jar.dist" value="${build.dir}/ema-installer.jar"/>
+    <property name="ema.swagger.gen.jar" value="ema-prime/ema-artifacts/ema-swagger-gen/target/ema-swagger-gen.jar"/>
+    <property name="ema.swagger.gen.jar.dist" value="${build.dir}/ema-swagger-gen.jar"/>
+    <property name="log4j.build.config" value="log4j2-build.yaml"/>
+    <property name="medical.dir" value=""/>
+    <property name="disable.translations" value="false"/>
+    <property name="ve.xml.versioning" value="true"/>
+    <property name="parsers.jvm.max.memory" value="-Xmx10g"/>
+    <property name="parsers.jvm.min.memory" value="-Xms512m"/>
+    <property name="parsers.metaspace.size" value="-XX:MaxMetaspaceSize=1024m"/>
+
+    <echo>Creating ${build.dir}</echo>
+    <mkdir dir="${build.dir}"/>
+
+    <echo>Creating ${src.property.overrides.dir}</echo>
+    <mkdir dir="${src.property.overrides.dir}"/>
+
+    <echo>Creating ${build.property.overrides.dir}</echo>
+    <mkdir dir="${build.property.overrides.dir}"/>
+
+    <echo>Reading property overrides from dir(s): ${property.overrides.dir}</echo>
+
+    <macrodef name="db-update-single-bean">
+        <attribute name="bean"/>
+        <sequential>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="DbUpdate"/>
+                <arg value="-beanName=@{bean}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="install">
+        <attribute name="beans"/>
+        <sequential>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="InstallUtil"/>
+                <arg line="@{beans}"/>
+                <sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+                <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStore=${truststore.location}"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStorePassword=${truststore.password}"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStoreType=${truststore.type}"/>
+                <jvmarg value="-Xmx6g"/>
+                <jvmarg value="-XX:MaxMetaspaceSize=1024m" />
+                <jvmarg value="-Duser.timezone=UTC" />
+                <jvmarg value="-Djava.net.preferIPv4Stack=true"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="db-apply-xml-with-qualifier">
+        <attribute name="qualifier" default="MISC"/>
+        <attribute name="medicalDomains" default=""/>
+        <sequential>
+            <echo message="Starting db-apply-xml with ve.xml.versioning=${ve.xml.versioning} and qualifier=@{qualifier} and medicalDomains=@{medicalDomains}"/>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="DbApplyXml"/>
+                <arg value="-qualifier"/>
+                <arg value="@{qualifier}"/>
+                <arg value="-medicalDomainOverrides"/>
+                <arg value="@{medicalDomains}"/>
+                <arg if:true="${parsers.run.parallel}" value="-p"/>
+                <arg if:true="${parsers.run.parallel}" value="-t${parsers.thread.count}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+                <sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+                <sysproperty key="skip.md5check" value="${skip.md5check}"/>
+                <sysproperty key="medical.dir" value="${medical.dir}"/>
+                <sysproperty key="disable.translations" value="${disable.translations}"/>
+                <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+                <sysproperty key="beanHelper.disableSorting" value="true"/>
+                <sysproperty key="parseVe.lookupProcedureMetadataOptionsFromDb" value="false"/>
+                <sysproperty key="ve.xml.versioning" value="${ve.xml.versioning}"/>
+                <sysproperty key="spring.cloud.config.uri" value="${cloud.config.uri}"/>
+                <sysproperty key="spring.cloud.config.enabled" value="${cloud.config.enabled}"/>
+                <sysproperty key="spring.application.name" value="${application.name}"/>
+                <sysproperty key="spring.profiles.active" value="${springprofiles.active}"/>
+                <jvmarg value="${parsers.jvm.max.memory}"/>
+                <jvmarg value="${parsers.jvm.min.memory}" />
+                <jvmarg value="${parsers.metaspace.size}"/>
+                <jvmarg if:true="${parsers.run.parallel}" value="${parsers.gc.algorithm}"/>
+                <jvmarg value="-Djava.net.preferIPv4Stack=true"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStore=${truststore.location}"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStorePassword=${truststore.password}"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStoreType=${truststore.type}"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="create-beta-firm">
+        <attribute name="prefix"/>
+        <attribute name="medicalDomain"/>
+        <attribute name="medicalSubdomain"/>
+        <attribute name="firstname"/>
+        <attribute name="lastname"/>
+        <attribute name="username"/>
+        <attribute name="password"/>
+        <sequential>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="InitBetaFirmAndFacility"/>
+                <arg value="@{prefix}"/>
+                <arg value="@{medicalDomain}"/>
+                <arg value="@{medicalSubdomain}"/>
+                <arg value="@{firstname}"/>
+                <arg value="@{lastname}"/>
+                <arg value="@{username}"/>
+                <arg value="@{password}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+                <sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+                <jvmarg value="-Xmx768m"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="init-firm">
+        <attribute name="name"/>
+        <attribute name="prefix"/>
+        <attribute name="medicalDomain"/>
+        <attribute name="medicalSubdomain"  default="@{medicalDomain}"/>
+        <sequential>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="InitDemo"/>
+                <arg value="@{name}"/>
+                <arg value="@{prefix}"/>
+                <arg value="@{medicalDomain}"/>
+                <arg value="@{medicalSubdomain}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+                <sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+                <jvmarg value="-Xmx2g"/>
+                <jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+            </java>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="FacilityInstaller"/>
+                <arg value="@{prefix}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+                <sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+                <jvmarg value="-Xmx2g"/>
+                <jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+            </java>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="ErxInstaller"/>
+                <arg value="@{prefix}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+                <sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+                <jvmarg value="-Xmx2g"/>
+                <jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="init-mmpm-firm">
+        <attribute name="name"/>
+        <attribute name="prefix"/>
+        <attribute name="medicalDomain"/>
+        <attribute name="medicalSubdomain" default="@{medicalDomain}"/>
+        <sequential>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="InitMmpmFirm"/>
+                <arg value="@{name}"/>
+                <arg value="@{prefix}"/>
+                <arg value="@{medicalDomain}"/>
+                <arg value="@{medicalSubdomain}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+                <sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+                <jvmarg value="-Xmx2g"/>
+                <jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="compendium-updater">
+        <attribute name="lab"/>
+        <sequential>
+            <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+                <arg value="CompendiumUpdater"/>
+                <arg value="@{lab}"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+                <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+                <sysproperty key="skip.data-sets.list" value="${skip.data-sets.list}" />
+                <sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+                <sysproperty key="skip.md5check" value="${skip.md5check}" />
+                <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStore=${truststore.location}"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStorePassword=${truststore.password}"/>
+                <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStoreType=${truststore.type}"/>
+                <jvmarg value="-Xmx8g" />
+                <jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="generate-swagger-documentation">
+        <attribute name="version"/>
+        <sequential>
+            <echo>Generating Swagger documentation for version @{version} endpoints</echo>
+            <java jar="${ema.swagger.gen.jar.dist}" fork="true" failonerror="true">
+                <arg value="-v"/>
+                <arg value="@{version}"/>
+                <arg value="-s"/>
+                <arg value="${build.dir}/swaggerDocumentation"/>
+                <sysproperty key="log4j.configurationFile" value="${log4j.build.config}" />
+                <jvmarg value="-Xmx1g"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <target name="init">
+        <delete includeemptydirs="true">
+            <fileset dir="${build.dir}">
+                <include name="**/*"/>
+            </fileset>
+        </delete>
+    </target>
+
+    <target name="copy-ema-artifacts">
+        <antcall target="copy-ema-web-artifacts"/>
+        <antcall target="copy-ema-install-artifacts"/>
+    </target>
+
+    <target name="copy-ema-web-artifacts">
+        <copy file="${ema.war}" tofile="${ema.war.dist}"/>
+    </target>
+
+    <target name="copy-ema-install-artifacts">
+        <copy file="${ema.installer.jar}" tofile="${ema.installer.jar.dist}"/>
+    </target>
+
+    <target name="copy-ema-swagger-gen-artifacts">
+        <copy file="${ema.swagger.gen.jar}" tofile="${ema.swagger.gen.jar.dist}"/>
+    </target>
+
+    <target name="install-ema-installer-skip-tests">
+        <exec executable="/bin/sh" failonerror="true">
+            <arg value="-c"/>
+            <arg value="./mvnw -T 1C -Dmaven.test.skip -Dimpsort.skip -Dformatter.skip -B -pl :ema-installer -am clean install -s settings.xml"/>
+        </exec>
+    </target>
+
+    <target name="install-ema-web-skip-tests">
+        <exec executable="/bin/sh" failonerror="true">
+            <arg value="-c"/>
+            <arg value="./mvnw -T 1C -Dmaven.test.skip -Dimpsort.skip -Dformatter.skip -B -pl :ema-web -am clean install -s settings.xml"/>
+        </exec>
+    </target>
+
+    <target name="install-ema-web-dev-skip-tests">
+        <exec executable="/bin/sh" failonerror="true">
+            <arg value="-c"/>
+            <arg value="./mvnw -T 1C -Pdev -Dmaven.test.skip -Dimpsort.skip -Dformatter.skip -B -pl :ema-web -am clean install -s settings.xml"/>
+        </exec>
+    </target>
+
+    <target name="install-ema-prime">
+        <exec executable="/bin/sh" failonerror="true">
+            <arg value="-c"/>
+            <arg value="./mvnw -T 1C -Dimpsort.skip -Dformatter.skip -B clean install -s settings.xml"/>
+        </exec>
+    </target>
+
+    <target name="install-ema-prime-skip-tests">
+        <exec executable="/bin/sh" failonerror="true">
+            <arg value="-c"/>
+            <arg value="./mvnw -T 1C -Dmaven.test.skip -Dimpsort.skip -Dformatter.skip -B clean install -s settings.xml"/>
+        </exec>
+    </target>
+
+    <target name="install-ema-prime-dev-skip-tests">
+        <exec executable="/bin/sh" failonerror="true">
+            <arg value="-c"/>
+            <arg value="./mvnw -T 1C -Pdev -Dmaven.test.skip -Dimpsort.skip -Dformatter.skip -B clean install -s settings.xml"/>
+        </exec>
+    </target>
+
+    <target name="install-ema-prime-swagger-skip-tests">
+        <exec executable="/bin/sh" failonerror="true">
+            <arg value="-c"/>
+            <arg value="./mvnw -T 1C -Pswagger -Dmaven.test.skip -Dskip.npm -Dimpsort.skip -Dformatter.skip -B -pl :ema-swagger-gen -am clean install -s settings.xml"/>
+        </exec>
+    </target>
+
+    <target name="init-install-copy-ema-installer-skip-tests" depends="init">
+        <antcall target="install-ema-installer-skip-tests"/>
+        <antcall target="copy-ema-install-artifacts"/>
+    </target>
+
+    <target name="init-install-copy-ema-web-skip-tests" depends="init">
+        <antcall target="install-ema-web-skip-tests"/>
+        <antcall target="copy-ema-web-artifacts"/>
+    </target>
+
+    <target name="init-install-copy-ema-web-dev-skip-tests" depends="init">
+        <antcall target="install-ema-web-dev-skip-tests"/>
+        <antcall target="copy-ema-web-artifacts"/>
+    </target>
+
+    <target name="init-install-copy-ema-prime" depends="init">
+        <antcall target="install-ema-prime"/>
+        <antcall target="copy-ema-artifacts"/>
+    </target>
+
+    <target name="init-install-copy-ema-prime-skip-tests" depends="init">
+        <antcall target="install-ema-prime-skip-tests"/>
+        <antcall target="copy-ema-artifacts"/>
+    </target>
+
+    <target name="init-install-copy-ema-prime-dev-skip-tests" depends="init">
+        <antcall target="install-ema-prime-dev-skip-tests"/>
+        <antcall target="copy-ema-artifacts"/>
+    </target>
+
+    <target name="m2jarxmlparse" description="Packages jar for deployments" depends="init-install-copy-ema-installer-skip-tests">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="package-ema-build-runtime"/>
+    </target>
+
+    <target name="package-ema-build-runtime">
+        <jar basedir="." destfile="${build.dir}/ema-build-runtime.jar">
+            <include name="build.xml"/>
+            <include name="build.properties"/>
+            <include name="build/"/>
+            <include name="lib/"/>
+            <include name="src/"/>
+        </jar>
+    </target>
+
+    <target name="package" depends="init-install-copy-ema-web-skip-tests"/>
+
+    <target name="package-dev" depends="init-install-copy-ema-web-dev-skip-tests"/>
+
+    <target name="web-build">
+        <antcall target="package"/>
+    </target>
+
+    <target name="web-build-dev">
+        <antcall target="package-dev"/>
+    </target>
+
+    <target name="duplicate-property-key-check">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true" maxmemory="64m">
+            <arg value="ResourceCheck"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+        </java>
+    </target>
+
+    <target name="production-all" description="Install everything to get ema to run on fresh production pod or all-in-one" depends="init-install-copy-ema-prime-skip-tests">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-clean-install"/>
+        <antcall target="ema-db-fdb-load-full-latest"/>
+        <antcall target="db-apply-xml-split-nojsvalidation"/>
+    </target>
+
+    <target name="production-update" description="Applies new database change scripts only, builds WAR file with production configuration and deploys it to Tomcat" depends="init-install-copy-ema-prime-skip-tests">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-update-database"/>
+        <antcall target="db-apply-xml-split-nojsvalidation"/>
+        <antcall target="web-clean-install"/>
+    </target>
+
+    <target name="production-update-skip-xml" description="Applies new database change scripts only, builds WAR file with production configuration and deploys it to Tomcat, skips xml" depends="init-install-copy-ema-prime-skip-tests">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-update-database"/>
+        <antcall target="web-clean-install"/>
+    </target>
+
+    <target name="dev-all" description="Builds web app, drops database, recreates EMA tables, loads drug database, then creates demo firm and data" depends="init-install-copy-ema-prime">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-clean-install"/>
+        <antcall target="db-load-rgp"/>
+        <antcall target="ema-db-fdb-load-full-latest"/>
+        <antcall target="db-apply-xml-split-nojsvalidation"/>
+        <antcall target="db-load-ema-static"/>
+        <antcall target="db-create-firms"/>
+        <antcall target="create-surescripts-dummy-data"/>
+        <antcall target="load_mu2_profiles"/>
+    </target>
+
+    <target name="dev-update" description="Applies new database change scripts only, builds WAR file with dev configuration and deploys it to Tomcat" depends="init-install-copy-ema-prime-dev-skip-tests">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-update-database"/>
+        <antcall target="db-apply-xml-split-nojsvalidation"/>
+        <antcall target="web-clean-install"/>
+    </target>
+
+    <target name="dev-quick" description="Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firm and data" depends="install-ema-prime">
+        <antcall target="dev-quicker"/>
+    </target>
+
+    <target name="dev-quick-withxmljsvalidation" description="Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firm and data" depends="init-install-copy-ema-prime">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-soft-clean-install"/>
+        <antcall target="db-create-firms"/>
+        <antcall target="db-populate-ema-xml-from-db-snapshot"/>
+        <antcall target="db-apply-xml-split"/>
+        <antcall target="create-surescripts-dummy-data"/>
+        <antcall target="load_mu2_profiles"/>
+        <antcall target="generate-swagger"/>
+    </target>
+
+    <target name="dev-quick-no-unit-tests" description="Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firm and data.  Skips unit tests." depends="install-ema-prime-skip-tests">
+        <antcall target="dev-quicker"/>
+    </target>
+
+    <target name="dev-quicker" description="dev-quick without packaging - and ve3 is local (dev)" depends="init,copy-ema-artifacts">
+        <sequential>
+            <antcall target="duplicate-property-key-check"/>
+            <antcall target="db-soft-clean-install"/>
+            <antcall target="db-create-firms"/>
+            <antcall target="db-populate-ema-xml-from-db-snapshot"/>
+            <antcall target="db-apply-xml-split-nojsvalidation"/>
+            <antcall target="create-surescripts-dummy-data"/>
+            <antcall target="load_mu2_profiles"/>
+        </sequential>
+    </target>
+
+    <target name="dev-quicker-no-xml-parsing" description="dev-quicker without parsing xml - relies on db-populate-ema-xml-from-db-snapshot - and ve3 is local (dev)" depends="init,copy-ema-artifacts">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-soft-clean-install"/>
+        <antcall target="db-create-firms"/>
+        <antcall target="db-populate-ema-xml-from-db-snapshot"/>
+        <antcall target="create-surescripts-dummy-data"/>
+        <antcall target="load_mu2_profiles"/>
+    </target>
+
+    <target name="dev-ultrafast" description="Runs deltas and combines the JS files. This does NOT actually build and is therefore likely not a good idea for switching branches." depends="init-install-copy-ema-prime-skip-tests">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-update-database"/>
+    </target>
+
+    <target name="run-integration-tests">
+        <exec executable="/bin/sh" failonerror="true">
+            <arg value="-c"/>
+            <arg value="./mvnw -T 1C -Pintegration-tests -Duser.timezone=UTC -Dskip.npm -Dimpsort.skip -Dformatter.skip -B clean verify -s settings.xml"/>
+        </exec>
+    </target>
+
+    <target name="generate-swagger" description="Generates Swagger documentation for all resource paths" depends="init">
+        <antcall target="install-ema-prime-swagger-skip-tests"/>
+        <antcall target="copy-ema-swagger-gen-artifacts"/>
+        <generate-swagger-documentation version="1"/>
+        <generate-swagger-documentation version="2"/>
+        <generate-swagger-documentation version="3"/>
+        <!--com.m2.ws.v2.webhook-->
+        <generate-swagger-documentation version="22"/>
+    </target>
+
+    <target name="generate-swagger-3" description="Generates Swagger documentation version 3 only" depends="init">
+        <antcall target="install-ema-prime-swagger-skip-tests"/>
+        <antcall target="copy-ema-swagger-gen-artifacts"/>
+        <generate-swagger-documentation version="3"/>
+    </target>
+
+    <target name="db-quick-install" description="Drops and creates all database tables except for FDB data, reloads the xml">
+        <antcall target="duplicate-property-key-check"/>
+        <antcall target="db-soft-clean-install"/>
+        <antcall target="db-populate-ema-xml-from-db-snapshot"/>
+        <antcall target="db-apply-xml-split-nojsvalidation"/>
+    </target>
+
+    <target name="db-load-ema-static" depends="db-setup-gudid-device-tables">
+        <antcall target="db-load-lab-smart-forms"/>
+        <antcall target="db-apply-data-sets"/>
+        <antcall target="load-rxnorm"/>
+        <antcall target="db-setup-gudid-device-tables"/>
+        <antcall target="db-setup-specialized-registry"/>
+    </target>
+
+    <target name="db-clean-just-ema-and-changelog" description="Drops just the EMA tables and then recreates database with changelog table">
+        <db-update-single-bean bean="soft-clean-ema"/>
+    </target>
+
+    <target name="db-clean" description="Drops and creates database with changelog table">
+        <db-update-single-bean bean="clean-ema"/>
+    </target>
+
+    <target name="db-audit-clean" description="Drops and creates database with changelog table">
+        <db-update-single-bean bean="clean-ema-audit"/>
+    </target>
+
+    <target name="db-update-database" description="Updates database applying any necessary change scripts">
+        <db-update-single-bean bean="deploy-ema"/>
+    </target>
+
+    <target name="db-update-audit-database" description="Updates ema_audit database applying any necessary change scripts">
+        <db-update-single-bean bean="deploy-ema-audit"/>
+    </target>
+
+    <target name="db-audit-clean-install" description="Drops and creates database with changelog table for audit">
+        <antcall target="db-audit-clean"/>
+        <antcall target="db-update-audit-database"/>
+    </target>
+
+    <target name="db-clean-install" description="Drops and recreates database">
+        <antcall target="db-clean"/>
+        <antcall target="ema-db-fdb-create-tables"/>
+        <antcall target="db-update-database"/>
+    </target>
+
+    <target name="db-soft-clean-install" description="Drops and creates all database tables without dropping the database">
+        <echo message="Dropping and reloading tables except for FDB drug tables"/>
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="DbUpdate"/>
+            <arg value="-beanName=soft-clean-ema"/>
+            <arg value="-beanName=deploy-ema"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+        </java>
+    </target>
+
+    <target name="db-populate-ema-xml-from-db-snapshot" description="Creates a baseline XML as of the snapshot date. Much faster than parsing all the XML">
+        <db-update-single-bean bean="db-populate-xml-base-line"/>
+    </target>
+
+    <target name="db-apply-xml-no-fk-check" description="calls db-apply-xml without doing an fk check">
+        <property name="skip.fkcheck" value="true"/>
+        <antcall target="db-apply-xml-split"/>
+    </target>
+
+    <target name="db-apply-xml-nojsvalidation" description="calls db-apply-xml without jsvalidation">
+        <antcall target="db-apply-xml-split-nojsvalidation"/>
+    </target>
+
+    <target name="db-apply-xml-split-nojsvalidation" description="calls db-apply-xml in batches without jsvalidation">
+        <property name="skip.jsvalidation" value="true"/>
+        <antcall target="db-apply-xml-split"/>
+    </target>
+
+    <target name="db-apply-xml" description="Legacy only, use db-apply-xml-split. Loads biopsy log, HPI and virtual exam room data from XML files into database - DEPRECATED use db-apply-xml-split">
+        <echo message="This process is prone to running out of memory - use db-apply-xml-split instead."/>
+        <db-apply-xml-with-qualifier qualifier="ICD10"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_VE"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_HPI"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_RESULTS"/>
+        <db-apply-xml-with-qualifier qualifier="INV_MGT"/>
+        <db-apply-xml-with-qualifier qualifier="MISC"/>
+    </target>
+
+    <target name="db-apply-xml-parallel" description="db-apply-xml with multiple qualifiers running in parallel">
+        <property name="skip.jsvalidation" value="true"/>
+        <db-apply-xml-with-qualifier qualifier="ICD10,PARSE_RESULTS,INV_MGT"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_VE,PARSE_HPI" medicalDomains="DERMATOLOGY,OPHTHALMOLOGY,UROLOGY,ORTHOPEDICS,RHEUMATOLOGY,PODIATRY"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_VE,PARSE_HPI" medicalDomains="PLASTICS,AESTHETICS,PRIMARY_CARE,ENT,GI"/>
+        <db-apply-xml-with-qualifier qualifier="MISC"/>
+    </target>
+
+    <target name="db-apply-xml-split" description="Loads biopsy log, HPI and virtual exam room data from XML files into database in three batches for lower overall memory requirements">
+        <antcall target="db-apply-xml-one-of-four" />
+        <antcall target="db-apply-xml-two-of-four" />
+        <antcall target="db-apply-xml-three-of-four"/>
+        <antcall target="db-apply-xml-four-of-four"/>
+    </target>
+
+    <target name="db-apply-xml-one-of-four" description="Loads biopsy log, HPI and virtual exam room data from XML files into database with a limited number of medical domains">
+        <db-apply-xml-with-qualifier qualifier="ICD10"/>
+        <db-apply-xml-with-qualifier qualifier="MISC"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_VE" medicalDomains="DERMATOLOGY,OPHTHALMOLOGY,UROLOGY"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_HPI"
+                                     medicalDomains="DERMATOLOGY,OPHTHALMOLOGY,UROLOGY,ORTHOPEDICS,RHEUMATOLOGY,PODIATRY,PLASTICS,AESTHETICS,ENT,GI"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_RESULTS"/>
+        <db-apply-xml-with-qualifier qualifier="INV_MGT"/>
+    </target>
+
+    <target name="db-apply-xml-two-of-four" description="Loads second batch of virtual exam room data from XML files into database with a limited number of medical domains">
+        <db-apply-xml-with-qualifier qualifier="PARSE_VE" medicalDomains="ORTHOPEDICS,RHEUMATOLOGY,PODIATRY"/>
+    </target>
+
+    <target name="db-apply-xml-three-of-four" description="Loads third batch of virtual exam room data from XML files into database with a limited number of medical domains">
+        <db-apply-xml-with-qualifier qualifier="PARSE_VE" medicalDomains="PLASTICS,AESTHETICS,ENT,GI"/>
+    </target>
+
+    <target name="db-apply-xml-four-of-four" description="Loads fourth batch of virtual exam room data from XML files into database with a limited number of medical domains">
+        <db-apply-xml-with-qualifier qualifier="PARSE_HPI" medicalDomains="PRIMARY_CARE"/>
+        <db-apply-xml-with-qualifier qualifier="PARSE_VE" medicalDomains="PRIMARY_CARE"/>
+    </target>
+
+    <target name="db-apply-data-sets" description="Loads flat file data sets into database" depends="create-static-data-sets-tables">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="DbApplyDataSets"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <sysproperty key="skip.data-sets.list" value="${skip.data-sets.list}" />
+            <sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+            <sysproperty key="skip.md5check" value="${skip.md5check}" />
+            <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+            <sysproperty key="tx.synchronization" value="SYNCHRONIZATION_ON_ACTUAL_TRANSACTION"/>
+            <sysproperty key="resource.datasource.transactional" value="false"/>
+            <sysproperty key="resource.datasource.lazyProxy" value="false"/>
+            <sysproperty key="resource.emaStaticDataSource.transactional" value="true"/>
+            <sysproperty key="resource.emaStaticDataSource.lazyProxy" value="true"/>
+            <sysproperty key="tx.datasource" value="emaStaticDataSource"/>
+            <jvmarg value="-Xmx8g"/>
+            <jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+            <jvmarg value="-Djava.net.preferIPv4Stack=true"/>
+        </java>
+    </target>
+
+    <target name="db-apply-data-sets-fhir" description="Loads flat file data sets into database for FHIR only" depends="create-static-data-sets-tables">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="DbApplyDataSets"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <sysproperty key="skip.data-sets.list" value="" />
+            <!-- runOnly is respected when skip.data not provided -->
+            <sysproperty key="runOnly.data-sets.list" value="vendor_application" />
+            <sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+            <sysproperty key="skip.md5check" value="${skip.md5check}" />
+            <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+            <sysproperty key="tx.synchronization" value="SYNCHRONIZATION_ON_ACTUAL_TRANSACTION"/>
+            <sysproperty key="resource.datasource.transactional" value="false"/>
+            <sysproperty key="resource.datasource.lazyProxy" value="false"/>
+            <sysproperty key="resource.emaStaticDataSource.transactional" value="true"/>
+            <sysproperty key="resource.emaStaticDataSource.lazyProxy" value="true"/>
+            <sysproperty key="tx.datasource" value="emaStaticDataSource"/>
+            <jvmarg value="-Xmx8g"/>
+            <jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+            <jvmarg value="-Djava.net.preferIPv4Stack=true"/>
+        </java>
+    </target>
+
+    <target name="db-apply-data-sets-loinc-test-result" description="Loads flat file data sets into database for loinc_test_result table" depends="create-static-data-sets-tables">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="DbApplyDataSets"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <sysproperty key="skip.data-sets.list" value="" />
+            <!-- runOnly is respected when skip.data not provided -->
+            <sysproperty key="runOnly.data-sets.list" value="loinc_test_result" />
+            <sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+            <sysproperty key="skip.md5check" value="${skip.md5check}" />
+            <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+            <sysproperty key="tx.synchronization" value="SYNCHRONIZATION_ON_ACTUAL_TRANSACTION"/>
+            <sysproperty key="resource.datasource.transactional" value="false"/>
+            <sysproperty key="resource.datasource.lazyProxy" value="false"/>
+            <sysproperty key="resource.emaStaticDataSource.transactional" value="true"/>
+            <sysproperty key="resource.emaStaticDataSource.lazyProxy" value="true"/>
+            <sysproperty key="tx.datasource" value="emaStaticDataSource"/>
+            <jvmarg value="-Xmx8g"/>
+            <jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+            <jvmarg value="-Djava.net.preferIPv4Stack=true"/>
+        </java>
+    </target>
+
+    <target name="db-apply-data-sets-lab-code-mapping" description="Loads flat file data sets into database for lab_code_mapping table" depends="create-static-data-sets-tables">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="DbApplyDataSets"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <sysproperty key="skip.data-sets.list" value="" />
+            <!-- runOnly is respected when skip.data not provided -->
+            <sysproperty key="runOnly.data-sets.list" value="lab_code_mapping" />
+            <sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+            <sysproperty key="skip.md5check" value="${skip.md5check}" />
+            <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+            <sysproperty key="tx.synchronization" value="SYNCHRONIZATION_ON_ACTUAL_TRANSACTION"/>
+            <sysproperty key="resource.datasource.transactional" value="false"/>
+            <sysproperty key="resource.datasource.lazyProxy" value="false"/>
+            <sysproperty key="resource.emaStaticDataSource.transactional" value="true"/>
+            <sysproperty key="resource.emaStaticDataSource.lazyProxy" value="true"/>
+            <sysproperty key="tx.datasource" value="emaStaticDataSource"/>
+            <jvmarg value="-Xmx8g"/>
+            <jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+            <jvmarg value="-Djava.net.preferIPv4Stack=true"/>
+        </java>
+    </target>
+
+    <target name="db-apply-data-sets-tribal-affiliation-codes" description="Loads flat file data sets into database for tribal_affiliation_codes table" depends="create-static-data-sets-tables">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="DbApplyDataSets"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <sysproperty key="skip.data-sets.list" value="" />
+            <!-- runOnly is respected when skip.data not provided -->
+            <sysproperty key="runOnly.data-sets.list" value="tribal_affiliation_codes" />
+            <sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+            <sysproperty key="skip.md5check" value="${skip.md5check}" />
+            <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+            <sysproperty key="tx.synchronization" value="SYNCHRONIZATION_ON_ACTUAL_TRANSACTION"/>
+            <sysproperty key="resource.datasource.transactional" value="false"/>
+            <sysproperty key="resource.datasource.lazyProxy" value="false"/>
+            <sysproperty key="resource.emaStaticDataSource.transactional" value="true"/>
+            <sysproperty key="resource.emaStaticDataSource.lazyProxy" value="true"/>
+            <sysproperty key="tx.datasource" value="emaStaticDataSource"/>
+            <jvmarg value="-Xmx8g"/>
+            <jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+            <jvmarg value="-Djava.net.preferIPv4Stack=true"/>
+        </java>
+    </target>
+
+    <target name="drop-static-data-sets-tables" description="drop data set tables in ema static">
+        <db-update-single-bean bean="db-drop-data-sets"/>
+    </target>
+
+    <target name="create-static-data-sets-tables" description="create data set tables in ema static">
+        <db-update-single-bean bean="db-create-data-sets"/>
+    </target>
+
+    <target name="db-load-lab-smart-forms">
+        <echo message="Loading the smart form table used by the labs integration"/>
+        <db-update-single-bean bean="db-load-lab-smart-forms"/>
+    </target>
+
+    <target name="db-setup-gudid-device-tables" description="Sets up the empty tables for the gudid database, data is found in device-db project">
+        <echo message="Creating empty gudid device tables"/>
+        <db-update-single-bean bean="db-setup-gudid-device-tables"/>
+    </target>
+
+    <target name="db-setup-specialized-registry" description="Loads the specialized-registry data into ema_static">
+        <echo message="Loading specialized-registry data into ema_static"/>
+        <db-update-single-bean bean="db-setup-specialized-registry"/>
+    </target>
+    <target name="compendium-updater-quest" description="Loads compendium file from quest">
+        <compendium-updater lab="quest"/>
+    </target>
+
+    <target name="compendium-updater-labcorp" description="Loads compendium file from labcorp">
+        <compendium-updater lab="labcorp"/>
+    </target>
+
+    <target name="db-setup-global-identification" description="Setup global identification handling in EMA static">
+        <echo message="Initializing global identification" />
+        <db-update-single-bean bean="db-setup-global-id"/>
+    </target>
+
+    <target name="global-id" description="Initializes global ids for firms" depends="db-setup-global-identification">
+        <install beans="FirmGlobalIdentification"/>
+    </target>
+
+    <target name="global-id-no-setup" description="Initializes global ids for firms, but does not attempt to write to ema_static">
+        <install beans="FirmGlobalIdentification"/>
+    </target>
+
+    <target name="create-gi-uro-rheum-beta-firms" description="creates gi, uro, and rheum beta firms for gi, uro, and rheum beta boxes">
+        <create-beta-firm prefix="cge" medicaldomain="GI" medicalsubdomain="GI" firstname="Elliot" lastname="Ellis" username="eellis" password="Changeme1"/>
+        <create-beta-firm prefix="utgu" medicaldomain="UROLOGY" medicalsubdomain="UROLOGY" firstname="Nadeem" lastname="Dhanani" username="ndhanani" password="Changeme1"/>
+        <create-beta-firm prefix="arth" medicaldomain="RHEUMATOLOGY" medicalsubdomain="RHEUMATOLOGY" firstname="Elana" lastname="Oberstein" username="eoberstein" password="Password1"/>
+    </target>
+
+    <target name="db-create-mmpm-firm" description="Create MMPM firm">
+        <init-mmpm-firm name="mmpm" prefix="mmpm" medicaldomain="DERMATOLOGY" />
+    </target>
+
+    <target name="db-create-firms" depends="db-load-demo-firms" description="Create all types of demo firms, then setup global id, which requires write access to ema_static.">
+        <antcall target="global-id" />
+    </target>
+
+    <target name="db-load-demo-firms" depends="db-load-snomed" description="Creates the demo firms. Aggregates the individual creates which are convenient for creating firms one at a time as may need to be done in QA, emademo, and other places we can't run dev quick.">
+        <install beans="InitDemo.demo,FacilityInstaller.demo,ErxInstaller.demo
+                        InitDemo.derm,FacilityInstaller.derm,ErxInstaller.derm
+                        InitDemo.mavderm,FacilityInstaller.mavderm,ErxInstaller.mavderm
+                        InitDemo.ophth,FacilityInstaller.ophth,ErxInstaller.ophth
+                        InitDemo.mavophth,FacilityInstaller.mavophth,ErxInstaller.mavophth
+                        InitDemo.opto,FacilityInstaller.opto,ErxInstaller.opto
+                        InitDemo.plastics,FacilityInstaller.plastics,ErxInstaller.plastics
+                        InitDemo.aesthetics,FacilityInstaller.aesthetics,ErxInstaller.aesthetics
+                        InitDemo.cosmetic,FacilityInstaller.cosmetic,ErxInstaller.cosmetic
+                        InitDemo.ortho,FacilityInstaller.ortho,ErxInstaller.ortho
+                        InitDemo.pain,FacilityInstaller.pain,ErxInstaller.pain
+                        InitDemo.ent,FacilityInstaller.ent,ErxInstaller.ent
+                        InitDemo.gi,FacilityInstaller.gi,ErxInstaller.gi
+                        InitDemo.rheum,FacilityInstaller.rheum,ErxInstaller.rheum
+                        InitDemo.urology,FacilityInstaller.urology,ErxInstaller.urology
+                        InitDemo.podiatry,FacilityInstaller.podiatry,ErxInstaller.podiatry
+                        InitDemo.im,FacilityInstaller.im,ErxInstaller.im
+                        InitDemo.fm,FacilityInstaller.fm,ErxInstaller.fm
+                        InitDemo.obgyn,FacilityInstaller.obgyn,ErxInstaller.obgyn
+                        InitDemo.peds,FacilityInstaller.peds,ErxInstaller.peds
+                        InitDemo.pc,FacilityInstaller.pc,ErxInstaller.pc
+                        InitDemo.multi,FacilityInstaller.multi,ErxInstaller.multi"/>
+    </target>
+
+    <target name="db-create-demo-firm" description="Creates demo firm and prefix with dummy data">
+        <init-firm name="demo" prefix="demo" medicaldomain="DERMATOLOGY"/>
+    </target>
+
+    <target name="db-create-ipad-firm" description="Creates ipad firm and prefix with dummy data">
+        <init-firm name="ipad" prefix="ipad" medicaldomain="DERMATOLOGY"/>
+    </target>
+
+    <target name="db-create-qa-firm" description="Creates qa firm and prefix with dummy data">
+        <init-firm name="QA Dermatology" prefix="qa" medicaldomain="DERMATOLOGY"/>
+    </target>
+
+    <target name="db-create-new-firm" description="Creates new firm and prefix with dummy data">
+        <init-firm name="New Dermatology" prefix="new" medicaldomain="DERMATOLOGY"/>
+    </target>
+
+    <target name="db-create-loadtest" description="Loads tons of test data">
+        <install beans="InitMassiveTest"/>
+    </target>
+
+    <target name="db-load-snomed" description="Load snomed code into ema">
+        <db-update-single-bean bean="db-load-snomed"/>
+    </target>
+
+    <target name="abb-setup" description="Sets up the ABB Database in ema-static">
+        <sequential>
+            <db-update-single-bean bean="db-abb-initial-data-load"/>
+            <db-update-single-bean bean="db-abb-update"/>
+            <antcall target="abb-update-catalog"/>
+            <db-update-single-bean bean="db-abb-cleanup"/>
+        </sequential>
+    </target>
+
+    <target name="abb-update-db" description="Update existing abb database">
+        <sequential>
+            <db-update-single-bean bean="db-abb-update"/>
+            <antcall target="abb-update-catalog"/>
+            <db-update-single-bean bean="db-abb-cleanup"/>
+        </sequential>
+    </target>
+
+    <target name="abb-update-catalog">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="ParseAbbData"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <sysproperty key="tx.synchronization" value="SYNCHRONIZATION_ON_ACTUAL_TRANSACTION"/>
+            <sysproperty key="resource.datasource.transactional" value="false"/>
+            <sysproperty key="resource.datasource.lazyProxy" value="false"/>
+            <sysproperty key="resource.emaStaticDataSource.transactional" value="true"/>
+            <sysproperty key="resource.emaStaticDataSource.lazyProxy" value="true"/>
+            <sysproperty key="tx.datasource" value="emaStaticDataSource"/>
+            <jvmarg value="-Xmx10g"/>
+            <jvmarg value="-XX:MaxMetaspaceSize=1g"/> <!-- TODO: why is this limit necessary? -->
+        </java>
+    </target>
+
+    <target name="load_mu2_profiles" description="Load 21 profiles for nist mu2 validation">
+        <db-update-single-bean bean="db-load-mu2-profiles"/>
+        <antcall target="init-mu2-erx"/>
+    </target>
+
+    <target name="init-mu2-erx">
+        <install beans="InitMu2Erx"/>
+    </target>
+
+    <target name="create-surescripts-dummy-data" description="Applies previously generated change script">
+        <db-update-single-bean bean="db-create-ss-dummy-data"/>
+        <db-update-single-bean bean="db-load-formulary-test-data"/>
+    </target>
+
+    <target name="test-data: import-formulary" description="Import prescription formulary data">
+        <db-update-single-bean bean="db-load-formulary-test-data"/>
+    </target>
+
+    <target name="test-data: load-rx-patients" description="Load profiles">
+        <install beans="LoadRxTestPatients" />
+    </target>
+
+    <target name="web-clean-install" description="Deletes ema web app from Tomcat, builds and deploys new ema WAR">
+        <antcall target="web-clean"/>
+        <antcall target="deploy-ema"/>
+    </target>
+
+    <target name="web-clean" description="Deletes the ema WAR file and directory">
+        <sequential>
+            <delete dir="${tomcat.dir}/webapps/ema"/>
+            <delete>
+                <fileset dir="${tomcat.dir}/webapps">
+                    <include name="ema.war"/>
+                </fileset>
+            </delete>
+            <delete failonerror="false">
+                <fileset dir="${tomcat.dir}/conf/Catalina/localhost">
+                    <include name="ema.xml"/>
+                </fileset>
+            </delete>
+        </sequential>
+    </target>
+
+    <target name="deploy-ema" description="Deploys the EMA web app to Tomcat">
+        <sequential>
+            <ac:if>
+                <not>
+                    <available file="${tomcat.webapps.dir}" type="dir"/>
+                </not>
+                <ac:then>
+                    <fail message="${tomcat.webapps.dir} does not exist. Check tomcat.dir property is correct."/>
+                </ac:then>
+            </ac:if>
+            <copy file="${ema.war.dist}" tofile="${tomcat.webapps.dir}/ema.war" overwrite="true"/>
+        </sequential>
+    </target>
+
+    <target name="expand-ema" description="Expands the WAR file under Tomcat">
+        <sequential>
+            <ac:if>
+                <not>
+                    <available file="${tomcat.webapps.dir}" type="dir"/>
+                </not>
+                <ac:then>
+                    <fail message="${tomcat.webapps.dir} does not exist. Check tomcat.dir property is correct."/>
+                </ac:then>
+            </ac:if>
+            <unzip src="${ema.war.dist}" dest="${tomcat.webapps.dir}/ema" overwrite="true"/>
+        </sequential>
+    </target>
+
+    <!-- One-off tasks -->
+
+    <target name="setup-run-attachment-restorer">
+        <input message="Please enter the url prefix of the firm to be restored: " addproperty="URL_PREFIX" />
+        <input message="Please enter the path name of the s3 list file:" addproperty="S3_FILE_LIST" />
+        <!-- SET A BOOLEAN PROPERTY IF WE GOT SOME INPUT  -->
+        <condition property="allIsWellBool">
+            <and>
+                <not>
+                    <equals arg1="${URL_PREFIX}" arg2="" trim="true" />
+                </not>
+                <not>
+                    <equals arg1="${S3_FILE_LIST}" arg2="" trim="true" />
+                </not>
+            </and>
+        </condition>
+    </target>
+
+    <target name="fail-run-attachment-restorer" unless="allIsWellBool">
+        <fail message="You must enter the urlPrefix and the path to the s3FileList file" />
+    </target>
+
+    <target name="run-attachment-restorer" description="Run the attachment restoration utility" depends="setup-run-attachment-restorer, fail-run-attachment-restorer" if="allIsWellBool">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="AttachmentRestorer"/>
+            <arg value="${URL_PREFIX}"/>
+            <arg value="${S3_FILE_LIST}"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+        </java>
+    </target>
+
+    <target name="pdf-diagnosis-parser-tool" description="Run the PdfDiagnosisParser tool">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="PdfDiagnosisParser"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+            <jvmarg value="-Xmx4g"/>
+            <jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+            <jvmarg value="-Dstart.date=${start.date}"/>
+            <jvmarg value="-Dend.date=${end.date}"/>
+            <jvmarg value="-Dstart.from.chart.note.id=${start.from.chart.note.id}"/>
+            <jvmarg value="-Dchart.note.filter.file=${chart.note.filter.file}"/>
+        </java>
+    </target>
+
+    <target name="regen-pdfs" description="Loads a list of chart notes from /tmp/chartNotesToExamine and regenerates the PDF outputs">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="RegenerateOutputs"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <jvmarg value="-Xmx1g"/>
+        </java>
+    </target>
+
+    <target name="regen-all-pdfs" description="Loads a list of chart note ids from /tmp/chartNotesToExamine, pulls finalized notes from the directory or generates preliminary notes storing all the outputs in a temporary directory">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="ChartNotePdfRenderer"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <jvmarg value="-Xmx1g" />
+        </java>
+    </target>
+
+    <target name="enhanced-licensing-migrate-firm">
+        <input message="Please enter the url prefix of the firm to be migrated: " addproperty="FIRM_LIST"/>
+        <propertyfile file="${build.property.overrides.dir}/licensing.overrides.properties">
+        </propertyfile>
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="EnhancedLicensingMigrationInstaller"/>
+            <arg value="-firms"/>
+            <arg value="${FIRM_LIST}"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStore=${truststore.location}"/>
+            <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStorePassword=${truststore.password}"/>
+            <jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStoreType=${truststore.type}"/>
+        </java>
+        <propertyfile file="${build.property.overrides.dir}/licensing.overrides.properties">
+        </propertyfile>
+    </target>
+
+    <target name="enhanced-licensing-migrate-pod">
+        <propertyfile file="${build.property.overrides.dir}/licensing.overrides.properties">
+        </propertyfile>
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="EnhancedLicensingMigrationInstaller"/>
+            <arg value="-pod"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+        </java>
+        <propertyfile file="${build.property.overrides.dir}/licensing.overrides.properties">
+        </propertyfile>
+    </target>
+
+    <!-- External -->
+    <target name="ema-db-fdb-create-tables" description="Runs fdb create tables">
+        <!-- fdb create tables-->
+        <echo message="Running fdb create tables" />
+        <ant antfile="../drug-db/build.xml" target="db-fdb-reset-tables" inheritall="false"/>
+    </target>
+
+    <target name="ema-db-fdb-load-full-latest" description="Runs fdb load full latest">
+        <echo message="Running fdb load full latest"/>
+        <ant antfile="../drug-db/build.xml" target="db-fdb-load-full-latest" inheritall="false"/>
+    </target>
+
+    <target name="load-rxnorm" description="Load RxNorm tables">
+        <ant antfile="../rxnorm-db/build.xml" inheritall="false"/>
+    </target>
+
+    <target name="db-load-rgp" description="Load RGP tables">
+        <ant antfile="../rgp-product-db/build.xml" inheritall="false"/>
+    </target>
+
+    <target name="load-ncci" description="Deprecated, see data-set - Load NCCI tables">
+        <ant antfile="../ncci-db/build.xml" inheritall="false"/>
+    </target>
+
+    <target name="install-third-party-data-sources" description="Installs additional data sources such as RxNorm, CMS, and RGP">
+        <ant antfile="../formulary-cms-db/build.xml" inheritall="false"/>
+        <ant antfile="../rxnorm-db/build.xml" inheritall="false"/>
+        <ant antfile="../rgp-product-db/build.xml" inheritall="false"/>
+    </target>
+
+    <target name="db-import-standard-scrub-rules" description="Import standard claim scrub rules into ema static database">
+        <java jar="${ema.installer.jar.dist}" fork="true" failonerror="true">
+            <arg value="DbImportStandardScrubRules"/>
+            <sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+            <sysproperty key="property.overrides.dir" value="${property.overrides.dir}"/>
+            <sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+            <sysproperty key="skip.md5check" value="${skip.md5check}" />
+            <sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+            <jvmarg value="-Xmx8g"/>
+            <jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+        </java>
+    </target>
+</project>
