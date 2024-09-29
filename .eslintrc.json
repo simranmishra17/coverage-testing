@@ -1,0 +1,9 @@
+{
+    "extends": "google",
+    "parser": "babel-eslint",
+    "rules": {
+        "indent": ["warn", 4],
+        "max-len": ["warn", 180],
+        "comma-dangle": "off"
+    }
+}

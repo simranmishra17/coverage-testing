@@ -1,0 +1,10 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore: {}
+patch: {}
+exclude:
+  global:
+    - '**/src/test/java/**'
+    - ema-prime/ema-artifacts/ema-web/src/it/java/com/m2/MavBaseTest.java
+    - '*.spec.ts'

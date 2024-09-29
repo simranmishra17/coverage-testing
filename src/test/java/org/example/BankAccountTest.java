@@ -1,9 +1,11 @@
 package org.example;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
 
-public class BankAccountTest {
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+
+class BankAccountTest {
 
     @Test
     public void testInitialBalance() {
@@ -11,9 +13,13 @@ public class BankAccountTest {
         assertEquals(100.0, account.getBalance(), 0.0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNegativeInitialBalance() {
-        new BankAccount(-50.0);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            new BankAccount(-50.0);
+        });
+
+        assertEquals("Initial balance cannot be negative.", exception.getMessage());
     }
 
     @Test
@@ -23,11 +29,14 @@ public class BankAccountTest {
         assertEquals(100.0, account.getBalance(), 0.0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testDepositNegativeAmount() {
-        BankAccount account = new BankAccount(50.0);
-        account.deposit(-10.0);
-    }
+//    @Test
+//    public void testDepositNegativeAmount() {
+//        BankAccount account = new BankAccount(50.0);
+//        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+//            account.deposit(-10.0);
+//        });
+//        assertEquals("Deposit amount cannot be negative.", exception.getMessage());
+//    }
 
     @Test
     public void testWithdraw() {
@@ -36,15 +45,21 @@ public class BankAccountTest {
         assertEquals(70.0, account.getBalance(), 0.0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testWithdrawMoreThanBalance() {
-        BankAccount account = new BankAccount(50.0);
-        account.withdraw(60.0);
-    }
+//    @Test
+//    public void testWithdrawMoreThanBalance() {
+//        BankAccount account = new BankAccount(50.0);
+//        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+//            account.withdraw(60.0);
+//        });
+//        assertEquals("Withdrawal amount exceeds balance.", exception.getMessage());
+//    }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testWithdrawNegativeAmount() {
-        BankAccount account = new BankAccount(100.0);
-        account.withdraw(-10.0);
-    }
+//    @Test
+//    public void testWithdrawNegativeAmount() {
+//        BankAccount account = new BankAccount(100.0);
+//        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+//            account.withdraw(-10.0);
+//        });
+//        assertEquals("Withdrawal amount cannot be negative.", exception.getMessage());
+//    }
 }

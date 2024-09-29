@@ -1,0 +1,3013 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<project name="ema" basedir="." xmlns:ac="antlib:net.sf.antcontrib" xmlns:if="ant:if">
+	<macrodef name="mvn-copy-dependencies">
+		<attribute name="pom" default="pom.xml"/>
+		<attribute name="dest"/>
+		<sequential>
+			<echo>mvn dependency:copy-dependencies -B -f @{pom}</echo>
+			<exec executable="/bin/sh" failonerror="true">
+				<arg value="-c" />
+				<arg value="mvn dependency:copy-dependencies -B -f @{pom}" />
+			</exec>
+			<copy todir="@{dest}">
+				<fileset dir="${basedir}/target/dependency" />
+			</copy>
+			<delete>
+				<fileset dir="${basedir}/target/dependency" />
+			</delete>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="mvn-copy-dependencies-offline">
+		<attribute name="pom" default="pom.xml"/>
+		<attribute name="dest"/>
+		<sequential>
+			<echo>mvn dependency:copy-dependencies -o -B -f @{pom}</echo>
+			<exec executable="/bin/sh" failonerror="true">
+				<arg value="-c" />
+				<arg value="mvn dependency:copy-dependencies -o -B -f @{pom}" />
+			</exec>
+			<copy todir="@{dest}">
+				<fileset dir="${basedir}/target/dependency" />
+			</copy>
+			<delete>
+				<fileset dir="${basedir}/target/dependency" />
+			</delete>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="mvn-install">
+		<attribute name="pom" default="pom.xml"/>
+		<sequential>
+			<echo>mvn install -Duser.timezone=UTC -B -f @{pom}</echo>
+			<exec executable="/bin/sh" failonerror="true">
+				<arg value="-c" />
+				<arg value="mvn install -Duser.timezone=UTC -B -f @{pom}" />
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="mvn-clean">
+		<attribute name="pom" default="pom.xml"/>
+		<sequential>
+			<echo>mvn clean -f @{pom}</echo>
+			<exec executable="/bin/sh" failonerror="true">
+				<arg value="-c" />
+				<arg value="mvn clean -f @{pom}" />
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<target name="mvn-clean-ema-prime" depends="dev-mode-check" unless="${devMode}">
+		<mvn-clean pom="ema-prime/pom.xml"/>
+	</target>
+
+	<target name="mvn-install-ema-prime" depends="dev-mode-check,mvn-clean-ema-prime" unless="${devMode}">
+		<mvn-install pom="ema-prime/pom.xml"/>
+	</target>
+
+	<target name="mvn-copy-dependencies-prime-lib" description="Resolve web/WEB-INF/lib (ema-prime) dependencies using maven" depends="mvn-install-ema-prime">
+		<delete>
+			<fileset dir="${WEB-INF.lib.dir}">
+				<include name="ema-firmusers-xml*.jar"/>
+				<include name="ema-parser-result-log*.jar"/>
+				<include name="ema-parser-hpi*.jar"/>
+				<include name="ema-parser-ve*.jar"/>
+				<include name="ema-ve-visit-structure*.jar"/>
+				<include name="ema-parser-loinc-keywords*.jar"/>
+				<include name="ema-parser-icd10*.jar"/>
+				<include name="ema-pqrs*.jar"/>
+				<include name="ema-maverick-rules*.jar"/>
+				<include name="ema-parser-patient-outcomes*.jar"/>
+				<include name="ema-bdd-visit-test*.jar"/>
+				<include name="ema-pqrs-nethealth*.jar"/>
+				<include name="ema-parser-dermpath*.jar"/>
+				<include name="ema-pmbc*.jar"/>
+				<include name="ema-xca-model*.jar"/>
+				<include name="ema-visit-billing-test*.jar"/>
+				<include name="ema-abb*.jar"/>
+				<include name="ema-domain*.jar"/>
+			</fileset>
+		</delete>
+		<mvn-copy-dependencies-offline pom="pom-prime-lib.xml" dest="${WEB-INF.lib.dir}" />
+	</target>
+
+	<target name="mvn-copy-dependencies-web-lib" description="Resolve web/WEB-INF/lib dependencies using maven" depends="mvn-copy-dependencies-prime-lib">
+		<delete>
+			<fileset dir="${WEB-INF.lib.dir}">
+				<include name="*.jar"/>
+				<exclude name="ema-firmusers-xml*.jar"/>
+				<exclude name="ema-parser-result-log*.jar"/>
+				<exclude name="ema-parser-hpi*.jar"/>
+				<exclude name="ema-parser-ve*.jar"/>
+				<exclude name="ema-ve-visit-structure*.jar"/>
+				<exclude name="ema-parser-loinc-keywords*.jar"/>
+				<exclude name="ema-parser-icd10*.jar"/>
+				<exclude name="ema-pqrs*.jar"/>
+				<exclude name="ema-maverick-rules*.jar"/>
+				<exclude name="ema-parser-patient-outcomes*.jar"/>
+				<exclude name="ema-bdd-visit-test*.jar"/>
+				<exclude name="ema-pqrs-nethealth*.jar"/>
+				<exclude name="ema-parser-dermpath*.jar"/>
+				<exclude name="ema-pmbc*.jar"/>
+				<exclude name="ema-xca-model*.jar"/>
+				<exclude name="ema-visit-billing-test*.jar"/>
+				<exclude name="ema-abb*.jar"/>
+				<exclude name="ema-domain*.jar"/>
+				<exclude name="m2-*.jar"/>
+			</fileset>
+		</delete>
+		<mvn-copy-dependencies pom="pom-web-lib.xml" dest="${WEB-INF.lib.dir}" />
+	</target>
+
+	<target name="mvn-copy-dependencies-lib" description="Resolve lib dependencies using maven">
+		<delete>
+			<fileset dir="${basedir}/lib" includes="*.jar"/>
+		</delete>
+		<mvn-copy-dependencies pom="pom-lib.xml" dest="${basedir}/lib" />
+	</target>
+
+	<target name="mvn-copy-dependencies-lib-build" description="Resolve lib/build dependencies using maven">
+		<delete>
+			<fileset dir="${basedir}/lib/build" includes="**/*.jar"/>
+		</delete>
+		<mvn-copy-dependencies pom="pom-lib-build.xml" dest="${basedir}/lib/build" />
+	</target>
+
+	<target name="mvn-copy-dependencies-lib-tools" description="Resolve lib/tools dependencies using maven">
+		<delete>
+			<fileset dir="${basedir}/lib/tools" includes="**/*.jar"/>
+		</delete>
+		<mvn-copy-dependencies pom="pom-lib-tools.xml" dest="${basedir}/lib/tools" />
+	</target>
+
+	<target name="mvn-copy-dependencies-lib-test" description="Resolve lib/test dependencies using maven">
+		<delete>
+			<fileset dir="${basedir}/lib/test">
+				<include name="*.jar"/>
+				<exclude name="testng-6.10.jar"/>
+			</fileset>
+		</delete>
+		<mvn-copy-dependencies pom="pom-lib-test.xml" dest="${basedir}/lib/test" />
+	</target>
+
+	<target name="mvn-copy-dependencies-tools-ant-contrib-1.0b3-lib" description="Resolve tools/ant-contrib-1.0b3/lib dependencies using maven">
+		<delete>
+			<fileset dir="${basedir}/tools/ant-contrib-1.0b3/lib" includes="*.jar"/>
+		</delete>
+		<mvn-copy-dependencies pom="pom-tools-ant-contrib-1.0b3-lib.xml" dest="${basedir}/tools/ant-contrib-1.0b3/lib" />
+	</target>
+
+	<target name="mvn-copy-dependencies-tools-lib" description="Resolve tools/lib dependencies using maven">
+		<delete>
+			<fileset dir="${basedir}/tools/lib" includes="*.jar"/>
+		</delete>
+		<mvn-copy-dependencies pom="pom-tools-lib.xml" dest="${basedir}/tools/lib" />
+	</target>
+
+	<target name="mvn-copy-dependencies-all" description="Resolve dependencies using maven"
+			depends="mvn-copy-dependencies-web-lib,mvn-copy-dependencies-lib,mvn-copy-dependencies-lib-build,mvn-copy-dependencies-lib-tools,mvn-copy-dependencies-tools-lib,mvn-copy-dependencies-tools-ant-contrib-1.0b3-lib,mvn-copy-dependencies-lib-test"/>
+
+	<target name="ivy-resolve" description="Retrieve dependencies with ivy (Deprecated)">
+		<echo>ivy-resolve is deprecated, please use mvn-copy-dependencies-all instead</echo>
+		<antcall target="mvn-copy-dependencies-all"/>
+	</target>
+
+	<!-- Include the targets from the drug-db project -->
+
+	<!-- ===================== Property Definitions =========================== -->
+
+	<property environment="env"/>
+	<property file="local.build.properties" />
+	<property file="build.properties" />
+	<property file="src/dev.ema.properties.local" />
+
+	<property name="cayenne.config" value="build.cayenne.xml"/>
+	<property name="log4j.build.config" value="log4j2-build.yaml"/>
+
+	<property name="tomcat.dir" location="/usr/local/tomcat/default" />
+
+	<property name="activemq.dir" location="/usr/local/activemq" />
+
+	<property name="pqrs.reporting.year" value="2015" />
+
+	<!-- Project directories -->
+	<!-- <property name="rx-common.project" location="../RxCommon"/> -->
+
+	<!-- File and directory names -->
+	<property name="app.name" value="ema" />
+
+	<property name="db.name" value="ema" />
+	<property name="db.hostname" value="localhost" />
+	<property name="db.port" value="3306" />
+	<property name="jdbc.url" value="jdbc:mysql://${db.hostname}:${db.port}" />
+	<property name="db.url" value="${jdbc.url}/${db.name}" />
+
+	<!-- Database used for keeping track of deployed version and associated artifacts - ngealy -->
+	<property name="build_db.name" value="build" />
+	<property name="jvm.max.memory" value="10g" />
+
+	<property name="build.dir" value="${basedir}/build" />
+
+	<!-- not sure if this is best place for this but make sure build dir exists so ant can run - sperian -->
+	<mkdir dir="${build.dir}"/>
+
+	<!-- create required directory for ant -->
+	<mkdir dir="lib/build"/>
+	<mkdir dir="lib/tools"/>
+	<mkdir dir="lib-src"/>
+	<mkdir dir="tools/ant-contrib-1.0b3/lib"/>
+
+	<property name="package.app.dir" value="${build.dir}/webapp/${app.name}" />
+	<property name="build.app.dir" value="${build.dir}/${app.name}" />
+	<property name="classes.dir" value="${basedir}/web/WEB-INF/classes"/>
+
+	<property name="test.src.dir" value="test"/>
+	<property name="integration.test.src.dir" value="integration-test"/>
+	<property name="test.resource.dir" value="test/resources"/>
+	<property name="test.output.dir" value="${build.dir}/test"/>
+	<property name="build.outputDir" value="${build.app.dir}/WEB-INF/classes"/>
+
+	<property name="tools.src.dir" value="tools"/>
+	<property name="tools.output.dir" value="${build.dir}/tools"/>
+	<property name="build.tools.output.dir" value="${build.dir}/tools/classes"/>
+
+	<property name="build.test.output.dir" value="${build.dir}/test/classes"/>
+	<property name="build.integration.test.output.dir" value="${build.dir}/integration-test/classes"/>
+
+	<property name="src.dir" value="${basedir}/src" />
+	<property name="web.dir" value="${basedir}/web" />
+
+	<property name="dev.src.dir" value="${basedir}/dev-src/main/java" />
+	<property name="dev.resources.dir" value="${basedir}/dev-src/main/resources" />
+	<property name="dev.web.dir" value="${basedir}/dev-src/main/web" />
+	<property name="dev.test.src.dir" value="dev-src/test/java"/>
+
+	<property name="medical.dir" value="" />
+	<property name="light.task.thread.count" value="1" />
+	<property name="heavy.task.thread.count" value="1" />
+	<property name="disable.translations" value="false" />
+
+	<property name="WEB-INF.lib.dir" value="${basedir}/web/WEB-INF/lib" />
+	<mkdir dir="${WEB-INF.lib.dir}"/>
+
+	<property name="reports" value="${build.dir}/reports" />
+	<property name="reports.test" value="${reports}/test" />
+	<property name="reports.javadoc" value="${reports}/javadoc" />
+	<property name="reports.schemaspy.dir" value="${reports}/schemaspy" />
+
+	<!-- TODO Move into schemaspy target? -->
+	<!-- SchemaSpy property values -->
+	<property name="schemaspy.report.dir" value="${reports.schemaspy.dir}"/>
+	<property name="schemaspy.jdbc.driver" value="${WEB-INF.lib.dir}/mysql-connector-java-5.1.47.jar"/>
+	<property name="schemaspy.database" value="${db.name}" />
+	<property name="schemaspy.driverClassName" value="com.mysql.jdbc.Driver" />
+	<property name="schemaspy.database.host" value="${db.hostname}" />
+	<property name="schemaspy.username" value="${db.user}" />
+	<property name="schemaspy.password" value="${db.password}" />
+
+	<property name="ant-contrib.home" location="${basedir}/tools/ant-contrib-1.0b3" />
+
+	<!-- ==================== m2dbdeploy properties =========================== -->
+	<property name="db.driver" value="com.mysql.jdbc.Driver" />
+
+	<property name="db.dir" value="${basedir}/database" />
+	<property name="db.deltas.dir" value="${basedir}/database/deltas" />
+
+	<property name="db.sql.dir" value="${basedir}/database/sql" />
+	<property name="db.fdb.data.dir" value="${db.dir}/firstdatabank/data" />
+
+	<property name="db.shared.resources.dir" value="${basedir}/database/shared/resources" />
+
+	<property name="db.m2dbdeploy.dir" value="${basedir}/database/m2dbdeploy" />
+	<property name="db.m2dbdeploy.lib.dir" value="${db.m2dbdeploy.dir}/lib" />
+	<property name="db.m2dbdeploy.scripts.dir" value="${db.m2dbdeploy.dir}/scripts" />
+	<property name="db.m2dbdeploy.resources.dir" value="${db.m2dbdeploy.dir}/resources" />
+
+	<!-- ==================== Bootstrap LESS -> CSS Generation ================= -->
+	<property name="css.work.dir" location="${build.dir}/css-gen" />
+	<property name="css.out.dir" location="${web.dir}/static/css/" />
+	<property name="css.src.dir" location="${web.dir}/static/css" />
+	<property name="dev.css.src.dir" location="${dev.web.dir}/static/css" />
+	<property name="bootstrap.less.dir" value="tools/lib/bootstrap/less" />
+	<property name="bootstrap.build.dir" value="${build.dir}/bootstrap" />
+	<property name="yui.src.dir" location="${web.dir}/static/yui" />
+	<property name="yui.work.dir" location="${build.dir}/yui" />
+	<property name="rhino.jar.path" value="lib/rhino-1.7R3.jar" />
+	<property name="less.lib.dir" value="tools/lib/less" />
+
+	<path id="mysql.classpath">
+		<fileset dir="${WEB-INF.lib.dir}">
+			<include name="mysql-connector-java-5.1.47.jar"/>
+		</fileset>
+	</path>
+
+	<path id="dbdeploy.classpath">
+		<fileset dir="${db.m2dbdeploy.lib.dir}">
+			<include name="m2dbdeploy.jar" />
+		</fileset>
+
+		<pathelement location="${db.m2dbdeploy.lib.dir}" />
+		<pathelement location="${db.m2dbdeploy.resources.dir}" />
+
+		<path refid="mysql.classpath" />
+	</path>
+
+	<path id="xmlbeans.classpath">
+		<fileset dir="lib" includes="*.jar" />
+	</path>
+
+	<taskdef name="dbdeploy" classname="com.dbdeploy.AntTarget" classpathref="dbdeploy.classpath"/>
+
+	<taskdef resource="net/sf/antcontrib/antlib.xml" uri="antlib:net.sf.antcontrib" onerror="fail" >
+		<classpath path="${ant-contrib.home}/ant-contrib-1.0b3.jar"/>
+	</taskdef>
+
+	<!-- ==================== Compilation Classpath =========================== -->
+
+	<path id="compile.classpath">
+		<fileset dir="${basedir}/web/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+
+		<fileset dir="${build.dir}">
+			<include name="*.jar" />
+		</fileset>
+
+		<pathelement location="${classes.dir}"/>
+
+		<fileset dir="${basedir}/lib/build">
+			<include name="*.jar" />
+		</fileset>
+
+		<pathelement location="lib" />
+		<fileset dir="lib">
+			<include name="*.jar" />
+		</fileset>
+
+		<path refid="mysql.classpath" />
+
+	</path>
+
+	<path id="db.create.classpath">
+		<pathelement location="${build.outputDir}"/>
+		<pathelement location="${classes.dir}"/>
+		<fileset dir="${basedir}/web/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+		<pathelement location="lib/javax.el-api-3.0.0.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/jta-1.1.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/activemq-core-5.15.9.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/geronimo-jms_1.1_spec-1.1.1.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar"/>
+		<pathelement location="lib/javax.servlet-api-3.1.0.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/jmimemagic-0.1.2.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/iText-5.0.2.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/commons-lang-2.6.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/guava-r09.jar"/>
+		<pathelement location="${basedir}/web/WEB-INF/lib/velocity-1.3.jar"/>
+		<path refid="mysql.classpath" />
+	</path>
+
+	<path id="test.classpath">
+		<fileset dir="${basedir}/web/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+
+		<fileset dir="${basedir}/lib/build">
+			<include name="*.jar" />
+			<include name="*.properties" />
+			<include name="*.xml" />
+		</fileset>
+
+		<fileset dir="lib">
+			<include name="*.jar" />
+		</fileset>
+
+		<fileset dir="${basedir}/lib/test">
+			<include name="*.jar" />
+		</fileset>
+
+		<pathelement location="${basedir}/test/resources"/>
+
+		<path refid="mysql.classpath" />
+	</path>
+
+	<typedef resource="org/apache/cayenne/tools/antlib.xml">
+		<classpath refid="compile.classpath"/>
+	</typedef>
+
+	<!-- The generated classes in src/com/m2/timeconstraints/antlr4 were committed so that
+		you don't have to run this everytime you do a new checkout.  It's a bit naughty to
+		be committing generated code, but committing generated code is less painful than
+		having to run this target all the time and having untracked files in the source tree.
+		The use of ANTLR for time constraints feature was way overkill.
+	-->
+	<target name="antlr-timeconstraints" description="Build time restrictions from antlr defs">
+		<java jar="web/WEB-INF/lib/antlr-4.4-complete.jar" fork="true">
+			<arg value="-package"/>
+			<arg value="com.m2.timeconstraints.antlr4.generated"/>
+			<arg value="src/com/m2/timeconstraints/antlr4/generated/TimeConstraints.g4"/>
+		</java>
+	</target>
+
+	<target name="dev-all"
+			depends="remotecheck,clean,prepare,compile, run-unit-tests-without-compile-project,db-clean,ema-db-fdb-create-tables,db-update-database,db-load-rgp,ema-db-fdb-load-full-latest,db-apply-xml,db-load-ema-static,db-create-demo-firm,db-create-firms,create-surescripts-dummy-data,load_mu2_profiles,package"
+			description="Builds web app, drops database, recreates EMA tables, loads drug database, then creates demo firm and data" />
+
+	<target name="dev-quick"
+			depends="remotecheck,clean,prepare,compile,stripes-resources,run-unit-tests-without-compile-project,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,set_integration_ONLY_FOR_DEVELOPMENT,db-populate-ema-xml-from-db-snapshot,db-apply-xml-nojsvalidation,create-surescripts-dummy-data,load_mu2_profiles,package,test_labs_ONLY_FOR_DEVELOPMENT"
+			description="Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firm and data" />
+
+	<target name="dev-quicker"
+			depends="remotecheck,clean,prepare,compile,stripes-resources,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,set_integration_ONLY_FOR_DEVELOPMENT,db-populate-ema-xml-from-db-snapshot,db-apply-xml-nojsvalidation,create-surescripts-dummy-data,load_mu2_profiles,test_labs_ONLY_FOR_DEVELOPMENT"
+			description="dev-quick without packaging - and ve3 is local (dev)" />
+
+	<target name="dev-quicker-no-xml-parsing"
+			depends="remotecheck,clean,prepare,compile,stripes-resources,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,set_integration_ONLY_FOR_DEVELOPMENT,db-populate-ema-xml-from-db-snapshot,create-surescripts-dummy-data,load_mu2_profiles,test_labs_ONLY_FOR_DEVELOPMENT"
+			description="dev-quicker without parsing xml - relies on db-populate-ema-xml-from-db-snapshot - and ve3 is local (dev)" />
+
+	<target name="dev-quick-withxmljsvalidation"
+			depends="remotecheck,clean,prepare,compile,stripes-resources,run-unit-tests-without-compile-project,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,set_integration_ONLY_FOR_DEVELOPMENT,db-populate-ema-xml-from-db-snapshot,db-apply-xml,create-surescripts-dummy-data,load_mu2_profiles,assemble-swagger-gen,generate-swagger-3,package,test_labs_ONLY_FOR_DEVELOPMENT"
+			description="Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firm and data" />
+
+	<target name="dev-quick-no-unit-tests"
+			depends="remotecheck,clean,prepare,compile,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,load_mu2_profiles,set_integration_ONLY_FOR_DEVELOPMENT,db-populate-ema-xml-from-db-snapshot,db-apply-xml-nojsvalidation,create-surescripts-dummy-data,package,test_labs_ONLY_FOR_DEVELOPMENT"
+			description="Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firm and data.  Skips unit tests." />
+
+	<target name="dev-quick-for-mu2-testing"
+			depends="dev-quick, install-mu2-test-data"
+			description="Runs dev quick then installs data for MU2 tests" />
+
+	<target name="dev-quick-for-mu2-useability"
+			depends="dev-quick, install-mu2-useability-data"
+			description="Runs dev quick then installs data for MU2 useability" />
+
+	<target name="dev-test" depends="remotecheck,clean,prepare,compile,db-clean-just-ema-and-changelog,db-update-database,db-create-firms"/>
+
+	<target name="dev-testing-xml-only"
+			depends="remotecheck,clean,prepare,compile,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,db-populate-ema-xml-from-db-snapshot,db-apply-xml-nojsvalidation"
+			description="Testing only - drop and recreates EMA XML" />
+
+	<target name="dev-quicker-ophth"
+			depends="remotecheck,clean,prepare,select-ophth,compile,stripes-resources,run-unit-tests-without-compile-project,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,set_integration_ONLY_FOR_DEVELOPMENT,db-populate-ema-xml-from-db-snapshot,db-apply-xml-nojsvalidation,create-surescripts-dummy-data,load_mu2_profiles,test_labs_ONLY_FOR_DEVELOPMENT"
+			description="Without packaging - Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firms and data, then populates ABB (contacts) tables" />
+
+	<target name="dev-quick-js-validate"
+			depends="remotecheck,clean,prepare,compile,stripes-resources,run-unit-tests-without-compile-project,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,set_integration_ONLY_FOR_DEVELOPMENT,db-apply-xml,create-surescripts-dummy-data,load_mu2_profiles,package"
+			description="Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firm and data" />
+
+	<target name="dev-quick-tools"
+			depends="remotecheck,clean,prepare,compile,stripes-resources,run-unit-tests-without-compile-project,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,set_integration_ONLY_FOR_DEVELOPMENT,db-apply-xml-nojsvalidation,create-surescripts-dummy-data,load_mu2_profiles,tools,package"
+			description="Builds web app, drops EMA tables only, rebuilds EMA tables, then creates demo firm and data" />
+
+	<target name="dev-deltas"
+			depends="remotecheck,clean,prepare,compile,stripes-resources,run-unit-tests-without-compile-project,package,db-update-database"
+			description="Builds web app and applies new database change scripts only" />
+	<target name="dev-deltas-no-test"
+			depends="remotecheck,clean,prepare,compile,stripes-resources,package,db-update-database"
+			description="Builds web app and applies new database change scripts only w/no unit tests" />
+
+	<target name="dev-single-vertical"
+			depends="remotecheck,clean,prepare,select-single-vertical,compile,stripes-resources,db-clean-just-ema-and-changelog,db-update-database,db-create-firms,set_integration_ONLY_FOR_DEVELOPMENT,db-apply-xml-nojsvalidation,create-surescripts-dummy-data,load_mu2_profiles,test_labs_ONLY_FOR_DEVELOPMENT"
+			description="Builds a single vertical by editing the ema.properties file for you and disabling all but the selected vertical. No unit tests" />
+
+	<target name="dev-ultrafast"
+			depends="db-update-database,generate-ema-css"
+			description="Runs deltas and combines the JS files. This does NOT actually build and is therefore likely not a good idea for switching branches." />
+
+	<target name="tools" depends="tools-clean,tools-setup,compile-tools,generate-objectmapper-map"/>
+
+	<target name="tools-clean">
+		<delete dir="${build.tools.output.dir}"/>
+	</target>
+
+	<target name="tools-setup">
+		<mkdir dir="${build.tools.output.dir}"/>
+	</target>
+
+	<path id="tools.classpath">
+		<pathelement location="${build.outputDir}" />
+		<pathelement location="${build.test.output.dir}"/>
+		<pathelement location="${build.tools.output.dir}"/>
+		<path refid="compile.classpath"/>
+		<fileset dir="${basedir}/web/WEB-INF/lib" includes="*.jar"/>
+		<pathelement location="${basedir}/lib/build/btm-2.1.0.jar"/>
+		<pathelement location="${basedir}/lib/build/jta-1.1.jar"/>
+		<pathelement location="lib/activemq-core-5.15.9.jar"/>
+		<pathelement location="lib/geronimo-jms_1.1_spec-1.1.1.jar"/>
+		<pathelement location="lib/geronimo-j2ee-management_1.1_spec-1.0.1.jar"/>
+		<pathelement location="${basedir}/tools/lib"/>
+	</path>
+
+	<property name="ts.output.dir" value="${web.dir}/static/ts/types" />
+	<property name="ts.info.json.path" value="${ts.output.dir}/typescript-generator-info.json" />
+	<path id="ts.gen.classpath">
+		<path refid="compile.classpath" />
+		<pathelement location="${build.outputDir}" />
+	</path>
+
+	<target name="generate-typescript-no-compile">
+		<taskdef name="typescript-generator" classname="com.modmed.auto.ant.typescript.TypeScriptGeneratorTask"
+				 classpathref="ts.gen.classpath" loaderref="ts.gen.classloader">
+		</taskdef>
+
+		<!-- V2 Linked DTOs, V3 Projections, V3 DTOs, & @AutoClientTyped annotated packages/classes -->
+		<!-- Must share classLoader to prevent same class loaded by multiple classLoaders -->
+		<typescript-generator
+				loaderref="ts.gen.classloader"
+				outputfile="${ts.output.dir}/ema.ts"
+				outputfiletype="implementationFile">
+			<basepackage>com.m2</basepackage>
+			<basepackage>com.modmed</basepackage>
+			<superclass>com.m2.dto.linked.BaseDTO</superclass>
+			<superclass>com.modmed.common.dto.Projection</superclass>
+			<superclass>com.modmed.common.dto.BaseDto</superclass>
+			<packagesorclasseswithannotation>com.modmed.auto.client.AutoClientTyped</packagesorclasseswithannotation>
+			<!-- Don't include any domain classes - may require specific class excludes in some rare cases -->
+			<excludedclasspattern>com.m2.domain.*</excludedclasspattern>
+			<excludedclasspattern>com.modmed.common.result.management.log.biz.SuggestedPlanDefinition</excludedclasspattern>
+			<!-- Naming conflict resolution -->
+			<customtypenaming>com.m2.dto.linked.BaseDTO:LinkedDTO</customtypenaming>
+			<customtypenaming>com.m2.dto.linked.AddressDTO:AddressLinkedDTO</customtypenaming>
+			<customtypenaming>com.m2.lab.constant.ResultStatus:LabResultStatus</customtypenaming>
+			<customtypenaming>com.modmed.rx.epa.enums.PharmacyType:RxPharmacyType</customtypenaming>
+			<customtypenaming>com.modmed.common.visit.dto.VeProcedureProjection:VisitVeProcedureProjection</customtypenaming>
+			<customtypenaming>com.modmed.commonwell.data.Contact:CommonwellContact</customtypenaming>
+			<customtypenaming>com.m2.mav.domain.enums.BillingType:SupportedBillingType</customtypenaming>
+			<customtypenaming>com.m2.mav.edi.claimstatus.realtime.x12.model.ClaimStatus:RtClaimStatus</customtypenaming>
+			<customtypenaming>com.m2.mav.edi.claimstatus.realtime.x12.model.ServiceLine:RtServiceLine</customtypenaming>
+			<customtypenaming>com.m2.mav.edi.claimstatus.realtime.x12.model.InformationSource:RtInformationSource</customtypenaming>
+			<customtypenaming>com.m2.mav.edi.claimstatus.realtime.x12.model.InformationReceiver:RtInformationReceiver</customtypenaming>
+			<customtypenaming>com.modmed.fhir.v2.rest.model.patient.dto.PatientDto:FhirPatientDto</customtypenaming>
+			<customtypenaming>com.modmed.fhir.v2.rest.model.documentreference.dto.FileAttachmentDTO:FhirFileAttachmentDto</customtypenaming>
+			<customtypenaming>com.modmed.fhir.v2.rest.model.appointment.dto.AppointmentDto:FhirAppointmentDto</customtypenaming>
+		</typescript-generator>
+	</target>
+
+	<target name="generate-typescript" depends="compile,generate-typescript-no-compile" />
+
+	<target name="compile-tools" depends="tools-setup">
+		<javac destdir="${build.tools.output.dir}"
+			   nowarn="false"
+			   debug="true"
+			   optimize="false"
+			   deprecation="false"
+			   target="1.8"
+			   verbose="false"
+			   fork="false"
+			   source="1.8"
+			   includeantruntime="false">
+			<src>
+				<pathelement location="${tools.src.dir}"/>
+			</src>
+			<classpath>
+				<pathelement location="${build.test.output.dir}"/>
+				<pathelement location="${build.outputDir}"/>
+				<path refid="compile.classpath"/>
+				<path refid="test.classpath"/>
+			</classpath>
+			<compilerarg line="-encoding utf-8"/>
+		</javac>
+	</target>
+
+	<target name="export-patient">
+		<java classname="com.m2.tools.objectmapper.core.JsonObjMapper" fork="true" maxmemory="768m" failonerror="true">
+			<classpath>
+				<path refid="tools.classpath"/>
+			</classpath>
+			<sysproperty key="RESOURCE_ROOT" value="${basedir}/tools/src/com/m2/tools/objectmapper/oncatcb/testusers"/>
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<sysproperty key="cayenne.config" value="objectmapper-cayenne.xml"/>
+			<arg value="--patient"/>
+			<arg value="${PATIENT}"/>
+			<arg value="${DIR}"/>
+		</java>
+	</target>
+
+	<target name="import-patient">
+		<java classname="com.m2.tools.objectmapper.core.JsonObjMapper" fork="true" maxmemory="768m" failonerror="true">
+			<classpath refid="tools.classpath"/>
+			<sysproperty key="RESOURCE_ROOT" value="${basedir}/tools/src/com/m2/tools/objectmapper/oncatcb/testusers"/>
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<sysproperty key="cayenne.config" value="objectmapper-cayenne.xml"/>
+			<arg value="--jsonfile"/>
+			<arg value="${FILE_NAME}"/>
+			<arg value="${DIR}"/>
+		</java>
+	</target>
+
+	<target name="generate-objectmapper-map" description="Generated map file for Object Mapper tool" depends="compile-tools">
+		<exec executable="${sed}" output="${build.tools.output.dir}/ObjectMapper.map.xml" failonerror="true">
+			<arg value="-f" />
+			<arg value="scripts/ObjectMapper.sed" />
+			<arg value="src/EMADomainMap.map.xml"/>
+		</exec>
+	</target>
+
+	<target name="run-attachment-restorer" description="Run the attachment restoration utility"
+			depends="setup-run-attchment-restorer, fail-run-attachment-restorer" if="allIsWellBool">
+		<java classname="com.modmed.ophth.tools.AttachmentRestorer" fork="true" maxmemory="768m" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<classpath refid="db.create.classpath"/>
+			<arg value="${URL_PREFIX}"/>
+			<arg value="${S3_FILE_LIST}"/>
+		</java>
+	</target>
+
+	<target name="setup-run-attchment-restorer">
+		<input message="Please enter the url prefix of the firm to be restored: " addproperty="URL_PREFIX" />
+		<input message="Please enter the path name of the s3 list file:" addproperty="S3_FILE_LIST" />
+		<!-- SET A BOOLEAN PROPERTY IF WE GOT SOME INPUT  -->
+		<condition property="allIsWellBool">
+			<and>
+				<not>
+					<equals arg1="${URL_PREFIX}" arg2="" trim="true" />
+				</not>
+				<not>
+					<equals arg1="${S3_FILE_LIST}" arg2="" trim="true" />
+				</not>
+			</and>
+		</condition>
+	</target>
+
+	<target name="fail-run-attachment-restorer" unless="allIsWellBool">
+		<fail message="You must enter the urlPefix and the path to the s3FileList file." />
+	</target>
+
+	<target name="import-onc-atcb-patients">
+		<delete dir="${build.tools.output.dir}/com/m2/tools/objectmapper/oncatcb/testusers"/>
+		<copy todir="${build.tools.output.dir}/com/m2/tools/objectmapper/oncatcb/testusers">
+			<fileset dir="${tools.src.dir}/src/com/m2/tools/objectmapper/oncatcb/testusers" />
+		</copy>
+		<java classname="com.m2.tools.objectmapper.oncatcb.CreateOncAtcbTestUsers" fork="true" maxmemory="768m" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<classpath refid="tools.classpath"/>
+		</java>
+	</target>
+
+	<target name="tools-import-bnh-patients" depends="generate-objectmapper-map" description="Import test patients for bnh">
+		<java classname="com.m2.tools.objectmapper.core.JsonObjMapper" fork="true" maxmemory="768m" failonerror="true">
+			<classpath refid="tools.classpath"/>
+			<sysproperty key="RESOURCE_ROOT" value="${basedir}/tools/src/com/m2/tools/objectmapper/oncatcb/testusers"/>
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<sysproperty key="cayenne.config" value="objectmapper-cayenne.xml"/>
+			<arg value="/surescripts/bnh"/>
+		</java>
+	</target>
+
+	<!-- ===========================================================================
+          Install everything to get ema to run on fresh production pod or all-in-one.
+          Differs from dev-all in that it loads additional third-party data and
+          does not populate dummy firms and dummy data.
+         =========================================================================== -->
+	<target name="production-all"
+			depends="clean,prepare,compile,db-clean,ema-db-fdb-create-tables,ema-db-fdb-load-full-latest,db-update-database,db-apply-xml,package"
+			description="Install everything to get ema to run on fresh production pod or all-in-one" />
+
+	<!-- ===========================================================================
+          Applies database change scripts. Builds and deploys the web app.
+          Differs from dev-all and dev-quick in that it DOES NOT drop the database. 0
+         =========================================================================== -->
+	<target name="production-update"
+			depends="clean,prepare,compile,stripes-resources,configure-production-files,db-update-database, db-apply-xml,web-clean-install"
+			description="Applies new database change scripts only, builds WAR file with production configuration and deploys it to Tomcat" />
+
+	<target name="dev-update" depends="db-update-database, db-apply-xml-nojsvalidation" description="minimal update for development"/>
+
+	<!-- =================================
+          Ensure a build directory exists
+         ================================= -->
+	<target name="init">
+		<mkdir dir="${build.app.dir}" />
+	</target>
+
+	<!-- ==============================================================
+          Delete all files from previous build to ensure a clean build
+         ============================================================== -->
+	<target name="clean" depends="mvn-copy-dependencies-all,init">
+		<delete includeemptydirs="true">
+			<fileset dir="${build.dir}">
+				<include name="**/*"/>
+				<exclude name=".svn"/>
+			</fileset>
+		</delete>
+		<delete>
+			<fileset dir="${css.out.dir}">
+				<include name="**/*.less.min.css" />
+			</fileset>
+		</delete>
+		<delete file="${basedir}/ema.war"/>
+		<delete file="${src.dir}/ema.properties.local"/>
+		<delete file="${classes.dir}/ema.properties.local"/>
+	</target>
+
+	<!-- =======================================
+          Create the build directory structure
+         ======================================= -->
+	<target name="prepare" depends="clean,git-commit-id">
+		<mkdir dir="${build.outputDir}"/>
+		<mkdir dir="${build.app.dir}/WEB-INF/lib"/>
+		<mkdir dir="${reports.test}"/>
+		<mkdir dir="${reports.javadoc}"/>
+		<mkdir dir="${reports.schemaspy.dir}"/>
+	</target>
+
+	<!-- =======================================================
+          Check to make sure we're not trying to build remotely
+         ======================================================= -->
+	<target name="remotecheck" depends="remotebuildchecks" unless="${isLocal}">
+		<fail message="Can only dev build against local machine - [${db.user}, ${db.port}, ${db.hostname}]" />
+	</target>
+
+	<!-- =====================================
+          Remote build checks (user and port)
+         ===================================== -->
+	<target name="remotebuildchecks">
+		<condition property="isLocal" value="true" else="false">
+			<and>
+				<equals arg1="${db.port}" arg2="3306"/>
+				<or>
+					<equals arg1="${db.hostname}" arg2="localhost"/>
+					<equals arg1="${db.hostname}" arg2="database"/>
+					<equals arg1="${db.hostname}" arg2="127.0.0.1"/>
+				</or>
+				<or>
+					<equals arg1="${db.user}" arg2="root"/>
+					<equals arg1="${db.user}" arg2="deploy"/>
+				</or>
+			</and>
+		</condition>
+	</target>
+
+	<!-- ========================================
+          Copies static files to build directory
+         ======================================== -->
+	<target name="copy-static-files" depends="dev-mode-check,generate-ema-css">
+		<copy todir="${build.app.dir}">
+			<fileset dir="${web.dir}">
+				<exclude name="static/ts/**/*.ts" />
+				<exclude name="src/**" />
+			</fileset>
+		</copy>
+
+		<copy todir="${build.app.dir}">
+			<fileset dir="${dev.web.dir}">
+				<exclude name="**/*" unless="${devMode}" />
+			</fileset>
+		</copy>
+
+	</target>
+
+	<!-- =================================
+          Compiles source
+         ================================= -->
+	<target name="compile" depends="prepare,compile-no-prepare"></target>
+
+	<target name="compile-no-prepare" depends="duplicate-property-key-check,assemble-stripes-resources-en,dev-mode-check">
+		<mkdir dir="${build.outputDir}"/>
+
+		<javac srcdir="${src.dir}"
+			   destdir="${build.outputDir}"
+			   debug="true"
+			   includeantruntime="false"
+			   deprecation="false"
+			   fork="true"
+			   memoryInitialSize="512m"
+			   memoryMaximumSize="4096m"
+			   source="1.8">
+			<classpath refid="compile.classpath" />
+			<compilerarg line="-encoding utf-8"/>
+		</javac>
+
+		<!-- TODO Can these be copied with the static files? -->
+		<!-- Copy application resources -->
+		<copy todir="${build.outputDir}">
+			<fileset dir="${src.dir}" excludes="**/*.java" />
+		</copy>
+
+		<ac:if>
+			<istrue value="${devMode}" />
+			<ac:then>
+				<antcall target="assemble-dev" />
+			</ac:then>
+		</ac:if>
+	</target>
+
+	<target name="assemble-dev"
+			description="Compiles dev-src" >
+		<echo>Compiling development sources</echo>
+		<javac srcdir="${dev.src.dir}"
+			   destdir="${build.outputDir}"
+			   debug="true"
+			   includeantruntime="false"
+			   deprecation="false"
+			   fork="true"
+			   memoryInitialSize="256m"
+			   memoryMaximumSize="2048m">
+			<classpath refid="compile.classpath" />
+			<compilerarg line="-encoding utf-8"/>
+		</javac>
+		<copy todir="${build.outputDir}">
+			<fileset dir="${dev.resources.dir}" />
+		</copy>
+		<copy todir="${build.app.dir}">
+			<fileset dir="${dev.web.dir}"/>
+		</copy>
+	</target>
+
+	<target name="assemble-swagger-gen"
+			description="Compiles Swagger doc gen" >
+		<echo>Compiling swagger doc gen</echo>
+		<javac destdir="${build.outputDir}"
+			   debug="true"
+			   includeantruntime="false"
+			   deprecation="false"
+			   fork="true"
+			   memoryInitialSize="256m"
+			   memoryMaximumSize="2048m">
+			<src path="${dev.src.dir}"/>
+			<include name="com/modmed/dev/swagger/**"/>
+			<include name="io/swagger/jaxrs/**"/>
+			<classpath refid="compile.classpath" />
+			<compilerarg line="-encoding utf-8"/>
+		</javac>
+		<copy todir="${build.outputDir}">
+			<fileset dir="${dev.resources.dir}" />
+		</copy>
+		<copy todir="${build.app.dir}">
+			<fileset dir="${dev.web.dir}"/>
+		</copy>
+	</target>
+
+
+	<target name="recompile">
+		<javac srcdir="${src.dir}"
+			   destdir="${build.outputDir}"
+			   debug="true"
+			   includeantruntime="false"
+			   deprecation="false"
+			   fork="true"
+			   memoryInitialSize="256m"
+			   memoryMaximumSize="512m">
+			<classpath refid="compile.classpath" />
+			<compilerarg line="-encoding utf-8"/>
+		</javac>
+
+		<!-- TODO Can these be copied with the static files? -->
+		<!-- Copy application resources -->
+		<copy todir="${build.outputDir}">
+			<fileset dir="${src.dir}" excludes="**/*.java" />
+		</copy>
+	</target>
+
+	<!-- =================================
+          Assembles properties files to StripesResources_en.properties
+         ================================= -->
+	<target name="assemble-stripes-resources-en">
+		<delete file="src/StripesResources_en.properties" quiet="true"/>
+		<concat destfile="src/StripesResources_en.properties">
+			<fileset dir=".">
+				<include name="src/StripesResources-dev.properties"/>
+			</fileset>
+		</concat>
+	</target>
+
+	<target name="copy-stripes-resources">
+		<copy todir="${build.outputDir}">
+			<fileset dir="${src.dir}" includes="StripesResources_*.properties" />
+		</copy>
+	</target>
+
+	<!-- =================================
+         Runs the language translator and copies the generated files to the build directory.
+         ================================= -->
+	<target name="stripes-resources" depends="assemble-stripes-resources-en" description="Adds to Stripes Resource files">
+		<java classname="com.m2.util.Translator" fork="true" maxmemory="2048m" failonerror="true">
+			<classpath>
+				<path refid="compile.classpath"/>
+				<pathelement location="${build.outputDir}"/>
+			</classpath>
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<arg line="--langs es,pt_br"></arg>
+		</java>
+		<antcall target="copy-stripes-resources"/>
+	</target>
+
+	<target name="stripes-resources-with-compile" depends="compile">
+		<antcall target="stripes-resources"/>
+	</target>
+
+	<!-- =================================
+	      Compile all unit tests
+	     ================================= -->
+	<target name="compile-unit-tests" description="unit test." depends="dev-mode-check">
+		<mkdir dir="${build.test.output.dir}"/>
+		<javac destdir="${build.test.output.dir}"
+			   nowarn="false"
+			   debug="true"
+			   optimize="false"
+			   deprecation="false"
+			   target="1.8"
+			   verbose="false"
+			   fork="false"
+			   source="1.8"
+			   includeantruntime="false">
+			<src>
+				<pathelement location="${test.src.dir}"/>
+			</src>
+			<classpath>
+				<pathelement location="${build.outputDir}"/>
+				<path refid="compile.classpath"/>
+				<path refid="test.classpath"/>
+			</classpath>
+			<compilerarg line="-encoding utf-8"/>
+		</javac>
+		<copy todir="${build.test.output.dir}">
+			<fileset dir="${test.resource.dir}" includes="**/*" />
+			<fileset dir="${test.src.dir}" includes="**/*.xml" />
+		</copy>
+
+		<ac:if>
+			<istrue value="${devMode}" />
+			<ac:then>
+				<echo>Compiling development tests</echo>
+				<javac srcdir="${dev.test.src.dir}"
+					   destdir="${build.test.output.dir}"
+					   nowarn="false"
+					   debug="true"
+					   optimize="false"
+					   deprecation="false"
+					   target="1.8"
+					   verbose="false"
+					   fork="false"
+					   source="1.8"
+					   includeantruntime="false">
+					<classpath>
+						<pathelement location="${build.outputDir}"/>
+						<path refid="compile.classpath"/>
+						<path refid="test.classpath"/>
+					</classpath>
+					<compilerarg line="-encoding utf-8"/>
+				</javac>
+			</ac:then>
+		</ac:if>
+	</target>
+
+	<!-- =================================
+	      Compile all integration tests
+	     ================================= -->
+	<target name="compile-integration-tests" depends="compile-unit-tests" description="Compile the project and the integration test.">
+		<mkdir dir="${build.integration.test.output.dir}"/>
+		<javac destdir="${build.integration.test.output.dir}"
+			   nowarn="false"
+			   debug="true"
+			   optimize="false"
+			   deprecation="false"
+			   target="1.8"
+			   verbose="false"
+			   fork="false"
+			   source="1.8"
+			   includeantruntime="false">
+			<src>
+				<pathelement location="${integration.test.src.dir}"/>
+			</src>
+			<classpath>
+				<pathelement location="${build.test.output.dir}"/>
+				<pathelement location="${build.outputDir}"/>
+				<path refid="compile.classpath"/>
+				<path refid="test.classpath"/>
+			</classpath>
+			<compilerarg line="-encoding utf-8"/>
+		</javac>
+		<copy todir="${build.integration.test.output.dir}">
+			<fileset dir="${test.resource.dir}" includes="**/*.xml" />
+			<fileset dir="${integration.test.src.dir}" includes="**/*.xml **/*.txt **/*.com **/*.local" />
+		</copy>
+	</target>
+
+	<!-- =================================
+	      Run unit tests
+	     ================================= -->
+	<taskdef name="testng" classname="org.testng.TestNGAntTask" >
+		<classpath>
+			<pathelement location="${basedir}/lib/test/testng-6.10.jar"/>
+		</classpath>
+	</taskdef>
+
+	<target name="run-unit-tests-no-compile" description="Run unit tests" depends="run-archunit-tests-no-compile">
+		<fileset id="unit.tests.fileset" dir="${basedir}">
+			<include name="${test.src.dir}/**/*Test.*"/>
+			<include name="${test.src.dir}/**/*TestNG.*"/>
+			<include name="${dev.test.src.dir}/**/*Test.*" if="${devMode}"/>
+
+
+			<exclude name="${test.src.dir}/**/*OrderRequisitionServiceImplTest*" />
+			<!-- Base classes with no actual test, test classes extend these classes -->
+			<exclude name="${test.src.dir}/**/*BaseSuggestionStrategyTest*" />
+			<exclude name="${test.src.dir}/**/*OvRefractionVisualAcuityMeasurementSetDTOTest*"/>
+			<!-- Class for local testing only -->
+			<exclude name="${test.src.dir}/**/*InstamedSAMLServiceImplTest*" />
+			<!--exclude archunit tests since they can not be part of testNG as Junit4 is not supported -->
+			<exclude name="${test.src.dir}/com/modmed/archtest/**" />
+		</fileset>
+
+		<testng
+				mode="mixed"
+				workingDir="${basedir}"
+				classfilesetref="unit.tests.fileset"
+				verbose="2"
+				haltonfailure="true"
+				listeners="com.modmed.testng.FailOnlyTestListener,com.modmed.testng.FailSkipReporterNg"
+				useDefaultListeners="false">
+			<sysproperty key="log4j.configurationFile" value="log4j2-ema-test.yaml"/>
+			<classpath>
+				<pathelement location="${build.dir}/test/classes" />
+				<pathelement location="${build.outputDir}" />
+				<path refid="test.classpath"/>
+				<pathelement location="${test.resource.dir}" />
+			</classpath>
+			<jvmarg line="-Xmx6144m -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=2048m -Duser.timezone=UTC -XX:-UseGCOverheadLimit"/>
+			<jvmarg value="-Dfips.provider=SunRsaSign"/>
+		</testng>
+	</target>
+
+	<target name="run-unit-tests-no-compile-no-halt" description="Run unit tests" depends="run-archunit-tests-no-compile">
+		<fileset id="unit.tests.fileset" dir="${basedir}">
+			<include name="${test.src.dir}/**/*Test.*"/>
+			<include name="${test.src.dir}/**/*TestNG.*"/>
+			<include name="${dev.test.src.dir}/**/*Test.*" if="${devMode}"/>
+
+
+			<exclude name="${test.src.dir}/**/*OrderRequisitionServiceImplTest*" />
+			<!-- Base classes with no actual test, test classes extend these classes -->
+			<exclude name="${test.src.dir}/**/*BaseSuggestionStrategyTest*" />
+			<exclude name="${test.src.dir}/**/*OvRefractionVisualAcuityMeasurementSetDTOTest*"/>
+			<!-- Class for local testing only -->
+			<exclude name="${test.src.dir}/**/*InstamedSAMLServiceImplTest*" />
+			<!--exclude archunit tests since they can not be part of testNG as Junit4 is not supported -->
+			<exclude name="${test.src.dir}/com/modmed/archtest/**" />
+		</fileset>
+
+		<testng
+				mode="mixed"
+				workingDir="${basedir}"
+				classfilesetref="unit.tests.fileset"
+				verbose="2"
+				haltonfailure="false"
+				listeners="com.modmed.testng.FailOnlyTestListener,com.modmed.testng.FailSkipReporterNg"
+				useDefaultListeners="false"
+				failureproperty="test.failed">
+			<sysproperty key="log4j.configurationFile" value="log4j2-ema-test.yaml"/>
+			<classpath>
+				<pathelement location="${build.dir}/test/classes" />
+				<pathelement location="${build.outputDir}" />
+				<path refid="test.classpath"/>
+				<pathelement location="${test.resource.dir}" />
+			</classpath>
+			<propertyset></propertyset>
+			<jvmarg line="-Xmx6144m -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=2048m -Duser.timezone=UTC -XX:-UseGCOverheadLimit"/>
+			<jvmarg value="-Dfips.provider=SunRsaSign"/>
+		</testng>
+	</target>
+
+
+	<target name="run-archunit-tests-no-compile" description="Run arch unit tests" depends="dev-mode-check">
+		<fileset id="unit.tests.fileset" dir="${basedir}">
+			<include name="${test.src.dir}/com/modmed/archtest/**/*Test.*"/>
+		</fileset>
+
+		<junit haltonfailure="true" printsummary="on" showoutput="true" logfailedtests="true" >
+			<formatter type="plain" usefile="false"/>
+			<classpath>
+				<pathelement location="${build.dir}/test/classes" />
+				<pathelement location="${build.outputDir}" />
+				<path refid="test.classpath"/>
+				<pathelement location="${test.resource.dir}" />
+			</classpath>
+			<batchtest fork="yes">
+				<fileset dir="${test.src.dir}">
+					<include name="com/modmed/archtest/**/*Test.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<target name="run-unit-tests" depends="compile, compile-unit-tests, run-unit-tests-no-compile" description="Compile the project, test and run the unit tests." />
+	<target name="run-unit-tests-without-compile-project" depends="compile-unit-tests, run-unit-tests-no-compile" description="Compile and run the unit tests without compile the project." />
+
+	<!-- =================================
+          Run integration tests
+         ================================= -->
+	<property name="financials.integration.tests.path" value="com/m2/mav/financials/*" />
+	<property name="batch.integration.tests.path" value="com/m2/batch/json/**" />
+	<property name="mapping.builder.integration.tests.path" value="com/m2/dozer/mapper/builder/*" />
+	<fileset id="integration.tests.fileset" dir="${integration.test.src.dir}">
+		<include name="**/*Test.*"/>
+		<include name="**/*TestNG.*"/>
+		<exclude name="${mapping.builder.integration.tests.path}"/>
+		<exclude name="${financials.integration.tests.path}"/>
+		<exclude name="${batch.integration.tests.path}"/>
+		<exclude name="resources/**/*"/>
+	</fileset>
+	<fileset id="mapping.builder.integration.tests.fileset" dir="${integration.test.src.dir}">
+		<include name="${mapping.builder.integration.tests.path}"/>
+		<exclude name="**/AbstractMappingBuilderTest.*"/>
+	</fileset>
+
+	<fileset id="batch.integration.tests.json" dir="${integration.test.src.dir}">
+		<include name="com/m2/batch/json/*" />
+	</fileset>
+	<fileset id="batch.integration.tests.json.config" dir="${integration.test.src.dir}">
+		<include name="com/m2/batch/json/config/*" />
+	</fileset>
+
+	<target name="run-batch-tests-no-compile" description="Run financials integration tests">
+		<runbatchtest testclassref="batch.integration.tests.json" />
+		<runbatchtest testclassref="batch.integration.tests.json.config" />
+	</target>
+
+	<macrodef name="runbatchtest">
+		<attribute name="testclassref"/>
+		<sequential>
+			<testng
+					classfilesetref="@{testclassref}"
+					failureProperty="tests.failed"
+					outputdir="${build.outputDir}"
+					verbose="2"
+					haltonfailure="true" >
+				<sysproperty key="log4j.configurationFile" value="log4j2-ema-test.yaml"/>
+				<classpath>
+					<pathelement location="${build.dir}/integration-test/classes" />
+					<pathelement location="${build.dir}/test/classes" />
+					<pathelement location="${build.dir}/integration-test/classes/resources/com/m2/batch/json" />
+					<pathelement location="${build.outputDir}" />
+					<path refid="test.classpath"/>
+				</classpath>
+				<jvmarg line="-Xmx8192m -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=2048m -XX:-UseGCOverheadLimit"/>
+				<!--<jvmarg value="-Xdebug"/>-->
+				<!--<jvmarg value="-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005"/>-->
+			</testng>
+		</sequential>
+	</macrodef>
+
+	<fileset id="financials.integration.tests.fileset" dir="${integration.test.src.dir}">
+		<include name="${financials.integration.tests.path}" />
+	</fileset>
+	<target name="run-financials-tests-no-compile" description="Run financials integration tests">
+		<testng
+				classfilesetref="financials.integration.tests.fileset"
+				failureProperty="tests.failed"
+				outputdir="${build.outputDir}"
+				verbose="2"
+				haltonfailure="true">
+			<classpath>
+				<pathelement location="${build.dir}/integration-test/classes" />
+				<pathelement location="${build.dir}/test/classes" />
+				<pathelement location="${build.outputDir}" />
+				<path refid="test.classpath"/>
+			</classpath>
+			<jvmarg line="-Xmx6144m -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=2048m -XX:-UseGCOverheadLimit"/>
+		</testng>
+	</target>
+	<target name="run-mapping-builder-tests-no-compile" description="Run integration tests">
+		<testng
+				classfilesetref="mapping.builder.integration.tests.fileset"
+				failureProperty="tests.failed"
+				outputdir="${build.outputDir}"
+				verbose="2"
+				haltonfailure="true" >
+			<classpath>
+				<pathelement location="${build.dir}/integration-test/classes" />
+				<pathelement location="${build.dir}/test/classes" />
+				<pathelement location="${build.outputDir}" />
+				<path refid="test.classpath"/>
+			</classpath>
+			<jvmarg line="-Xmx6144m -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=2048m -XX:-UseGCOverheadLimit"/>
+		</testng>
+	</target>
+	<target name="run-integration-tests-no-compile" depends="run-financials-tests-no-compile, run-batch-tests-no-compile" description="Run integration tests">
+		<testng
+				mode="mixed"
+				classfilesetref="integration.tests.fileset"
+				failureProperty="tests.failed"
+				outputdir="${build.outputDir}"
+				verbose="2"
+				haltonfailure="true" >
+			<classpath>
+				<pathelement location="${build.dir}/integration-test/classes" />
+				<pathelement location="${build.dir}/test/classes" />
+				<pathelement location="${build.outputDir}" />
+				<path refid="test.classpath"/>
+			</classpath>
+			<jvmarg line="-Xmx6144m -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=2048m -XX:-UseGCOverheadLimit"/>
+		</testng>
+	</target>
+
+	<target name="run-batch-tests" depends="compile, compile-integration-tests, run-batch-tests-no-compile" description="Compile the project, integration tests and run the batch tests" />
+	<target name="run-financials-tests" depends="compile, compile-integration-tests, run-financials-tests-no-compile" description="Compile the project, integration tests and run the financials tests" />
+	<target name="run-mapping-builder-tests" depends="compile, compile-integration-tests, run-mapping-builder-tests-no-compile" description="Compile the project, integration tests and run the mapping builder tests" />
+	<target name="run-integration-tests" depends="compile, compile-integration-tests, run-integration-tests-no-compile" description="Compile the project, integration tests and run the integration tests" />
+	<target name="run-integration-tests-without-compile-project" depends="compile-integration-tests, run-integration-tests-no-compile" description="Compile and run the integration tests without compile the project." />
+
+	<!-- =================================
+	      Run erx unit test
+	     ================================= -->
+	<target name="erx-send-test-newrx-to-messaging-queue" description="Sends a test NEWRX to the messaging queue" depends="">
+		<java classname="com.m2.rx.erx.NewRxPublisher" fork="true" maxmemory="768m" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<classpath>
+				<pathelement location="${build.test.output.dir}" />
+				<pathelement location="${build.outputDir}"/>
+				<path refid="compile.classpath"/>
+				<path refid="test.classpath"/>
+			</classpath>
+		</java>
+	</target>
+
+	<target name="erx-send-test-prescriber-message-to-erx" description="Sends a test prescriber message to erx server" depends="">
+		<java classname="com.m2.rx.erx.UpdatePrescriberLocation" fork="true" maxmemory="768m" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<classpath>
+				<pathelement location="${build.test.output.dir}" />
+				<pathelement location="${build.outputDir}"/>
+				<path refid="compile.classpath"/>
+				<path refid="test.classpath"/>
+			</classpath>
+		</java>
+	</target>
+
+	<!-- ======================================================================
+        Send lab results from build task.
+     ====================================================================== -->
+	<target name="send-lab-results-from-build" description="Run the integration tests" depends="compile-unit-tests, send-lab-results" />
+
+	<!-- ======================================================================
+        Send lab results.
+     ====================================================================== -->
+	<target name="send-lab-results" description="Run the integration tests">
+		<mkdir dir="${build.outputDir}"/>
+		<testng outputdir="${reports.test}" methods="com.m2.integration.facade.IntegrationLabTest.sendJMSMessage"
+				useDefaultListeners="false" verbose="0">
+			<classpath>
+				<pathelement location="${build.integration.test.output.dir}" />
+				<pathelement location="${build.outputDir}" />
+				<path refid="test.classpath"/>
+			</classpath>
+			<classfileset dir="${basedir}" includesfile="${build.dir}/integration-test/classes/com/m2/integration/facade/IntegrationLabTest.class" />
+			<jvmarg value="-Xmx1024m" />
+		</testng>
+	</target>
+
+	<!-- ======================================================================
+        Run all online tests - localhost web server must be running
+     ====================================================================== -->
+	<target name="online-test" depends="compile-unit-tests" description="Run the online tests - localhost web server must be running">
+		<mkdir dir="${reports.test}"/>
+		<junit printSummary="yes" haltonerror="false" haltonfailure="false" fork="true" dir=".">
+			<sysproperty key="basedir" value="."/>
+			<formatter type="xml"/>
+			<formatter type="plain" usefile="false"/>
+			<classpath>
+				<pathelement location="${build.test.output.dir}"/>
+				<pathelement location="${build.outputDir}"/>
+				<path refid="compile.classpath"/>
+			</classpath>
+			<batchtest todir="${reports.test}">
+				<fileset dir="${test.src.dir}">
+					<include name="**/*OnlineTest.java"/>
+					<exclude name="**/*Abstract*Test.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+		<junitreport todir="${reports.test}">
+			<fileset dir="${reports.test}">
+				<include name="TEST-*.xml"/>
+			</fileset>
+			<report format="frames" todir="${reports.test}/html"/>
+		</junitreport>
+	</target>
+
+	<!-- send a test email -->
+	<target name="send-test-email" description="Sends a test email (to test if email sent as part of batch update is working)" >
+		<java classname="com.m2.rx.notification.SendTestEmail" fork="true" maxmemory="768m" failonerror="true">
+			<classpath>
+				<pathelement location="${build.test.output.dir}"/>
+				<path refid="compile.classpath"/>
+				<pathelement location="${build.outputDir}"/>
+			</classpath>
+		</java>
+	</target>
+
+	<!-- =================================
+          Fileset for the WAR file
+         ================================= -->
+	<fileset id="webapp.fileset" dir="${build.app.dir}" excludes="test/**,reports/**">
+		<exclude name="**/log4j2-build.yaml"/>
+		<!-- exclude jars used by Selenium, since they are for testing only -->
+		<exclude name="WEB-INF/lib/apache-mime4j-0.6.jar"/>
+		<exclude name="WEB-INF/lib/cssparser-0.9.5.jar"/>
+		<exclude name="WEB-INF/lib/htmlunit-core-js-2.8.jar"/>
+		<exclude name="WEB-INF/lib/htmlunit-2.8.jar"/>
+		<exclude name="WEB-INF/lib/nekohtml-1.9.14.jar"/>
+		<exclude name="WEB-INF/lib/sac-1.3.jar"/>
+		<exclude name="WEB-INF/lib/selenium-java-2.0b3.jar"/>
+		<exclude name="WEB-INF/lib/serializer-2.7.1.jar"/>
+		<exclude name="WEB-INF/classes/com/modmed/dev/swagger/**" unless="${devMode}"/>
+		<exclude name="WEB-INF/classes/io/swagger/jaxrs/**" unless="${devMode}"/>
+	</fileset>
+
+	<!-- =================================
+          Packages the WAR file
+         ================================= -->
+	<target name="package" depends="prepare,compile-js,compile-no-prepare,stripes-resources,copy-static-files">
+		<war destfile="${build.dir}/${app.name}.war">
+			<fileset refid="webapp.fileset"/>
+		</war>
+	</target>
+
+	<!-- =================================
+          Packages the WAR file with dev-src
+         ================================= -->
+	<target name="package-dev">
+		<set-property name="dev.mode" value="true" />
+		<antcall target="package" />
+	</target>
+
+	<!-- ==============================
+          Gets the git commit-id
+         ============================== -->
+	<target name="git-commit-id" depends="">
+		<exec executable = "git" outputproperty="git.commit.full">
+			<arg value = "rev-parse" />
+			<arg value = "HEAD" />
+		</exec>
+
+		<exec executable = "bash" outputproperty="git.commit">
+			<arg value="-c"/>
+			<arg value="git rev-parse HEAD | cut -c1-10"/>
+		</exec>
+
+		<exec executable = "git" outputproperty="git.tag">
+			<arg value = "describe" />
+		</exec>
+
+		<exec executable = "git" outputproperty="git.url">
+			<arg value = "config" />
+			<arg value = "--get" />
+			<arg value = "remote.origin.url" />
+		</exec>
+
+		<propertyfile file="${src.dir}/generated.properties">
+			<entry key="git.commit.id" value="${git.commit}" />
+			<entry key="git.tag.id" value="${git.tag}" />
+			<entry key="git.remote.origin.url" value="${git.url}" />
+			<entry key="git.commit.id.full" value="${git.commit.full}"/>
+		</propertyfile>
+	</target>
+
+	<target name="db-create-demo-firm" description="Creates demo firm and prefix with dummy data">
+		<init-firm name="demo" prefix="demo" medicaldomain="DERMATOLOGY"/>
+	</target>
+
+	<target name="db-create-ipad-firm" description="Creates ipad firm and prefix with dummy data">
+		<init-firm name="ipad" prefix="ipad" medicaldomain="DERMATOLOGY"/>
+	</target>
+
+	<target name="db-create-qa-firm" description="Creates qa firm and prefix with dummy data">
+		<init-firm name="QA Dermatology" prefix="qa" medicaldomain="DERMATOLOGY"/>
+	</target>
+
+	<target name="db-create-new-firm" description="Creates new firm and prefix with dummy data">
+		<init-firm name="New Dermatology" prefix="new" medicaldomain="DERMATOLOGY"/>
+	</target>
+
+	<target name="db-redact-pid" description="Redacts all PID data">
+		<java classname="com.m2.installer.RedactDatabase" fork="true" maxmemory="768m" failonerror="true">
+			<sysproperty key="cayenne.config" value="${cayenne.config}"/>
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}" />
+			<classpath refid="db.create.classpath"/>
+		</java>
+	</target>
+
+	<target name="rename-demo-firm-as-prev-release" description="Renames demo firm to prev-release">
+		<rename-demo-firm to="prev-release"/>
+	</target>
+
+	<target name="rename-demo-firm-as-next-release" description="Renames demo firm to next-release">
+		<rename-demo-firm to="next-release"/>
+	</target>
+
+	<!-- TODO Replace rename-demo-firm-* targets with a single parameterized target.
+              The name of the firm can be passed in at the command line, e.g.
+              ant rename-demo-firm -Dto=naz  -->
+	<target name="rename-demo-firm-as-new" description="Renames existing demo firm as new">
+		<rename-demo-firm to="new"/>
+	</target>
+
+	<target name="rename-demo-firm-as-cert" description="Renames existing demo firm as cert">
+		<rename-demo-firm to="cert"/>
+	</target>
+
+	<target name="rename-demo-firm-as-naz" description="Renames existing demo firm as naz">
+		<rename-demo-firm to="naz"/>
+	</target>
+
+	<target name="rename-demo-firm-as-ipadlive" description="Renames existing demo firm as ipadlive">
+		<rename-demo-firm to="ipadlive"/>
+	</target>
+
+	<target name="rename-demo-firm-as-qa" description="Renames existing demo firm as qa">
+		<rename-demo-firm to="qa"/>
+	</target>
+
+	<target name="rename-demo-firm-as-ipad" description="Renames existing demo firm as ipad">
+		<rename-demo-firm to="ipad"/>
+	</target>
+
+	<target name="rename-demo-firm-as-nightly" description="Renames existing demo firm as nightly">
+		<rename-demo-firm to="nightly"/>
+	</target>
+
+	<!-- ==================== Web App Target ====================================== -->
+
+	<target name="web-clean-install" depends="web-clean,configure-production-files,web-build,deploy-ema" description="Deletes ema web app from Tomcat, builds and deploys new ema WAR"/>
+
+	<!-- ==========================
+          Deletes EMA web app only
+         ========================== -->
+	<target name="web-clean" description="Deletes ema web app only">
+		<delete-web-app name="ema"/>
+	</target>
+
+	<!-- ==================================================
+          Builds the WAR file. Synonym for package target.
+         ================================================== -->
+	<target name="web-build" depends="package" description="Builds web app WAR file"/>
+
+	<!-- =================================
+          Prepares the webapp for dev only
+         ================================= -->
+	<target name="web-dev">
+		<delete dir="${package.app.dir}"/>
+		<mkdir dir="${package.app.dir}"/>
+		<copy todir="${build.app.dir}">
+			<fileset dir="${web.dir}" />
+		</copy>
+		<copy todir="${package.app.dir}">
+			<fileset refid="webapp.fileset"/>
+		</copy>
+	</target>
+
+	<!-- ===================
+          Generate JavaDocs
+         =================== -->
+	<target name="javadoc">
+		<javadoc sourcepath="${src.dir}"
+				 destdir="${reports.javadoc}"
+				 access="public"
+				 classpathref="compile.classpath"
+				 maxmemory="768m"
+				 verbose="true"/>
+	</target>
+
+	<!-- ========================================
+          SchemaSpy - database metadata analysis
+         ======================================== -->
+	<target name="schemaspy">
+		<echo>Generating database schemas in ${reports.schemaspy.dir}</echo>
+		<java jar="${basedir}/lib/build/schemaSpy-5.0.0.jar"
+			  output="${reports.schemaspy.dir}/schemaspy-out.log"
+			  error="${reports.schemaspy.dir}/schemaspy-error.log"
+			  fork="true">
+
+			<arg line="-t=mysql" />
+			<arg line="-I=fdb_.*" />
+			<arg line="-db=${schemaspy.database}"/>
+			<arg line="-u=${schemaspy.username}"/>
+			<arg line="-p=${schemaspy.password}"/>
+			<arg line="-cp=${schemaspy.jdbc.driver}"/>
+			<arg line="-host=${schemaspy.database.host}"/>
+			<arg line="-o=${reports.schemaspy.dir}"/>
+		</java>
+	</target>
+
+	<!-- ========================================
+          Packages the M2 build jar for db-update-database, db-apply-data-sets, and db-apply-xml for production deployments
+         ======================================== -->
+	<target name="m2jarxmlparse" depends="compile" description="Packages jar for database changes for deployments">
+		<jar basedir="." destfile="${build.dir}/ema-build-runtime.jar">
+			<include name="build/ema/WEB-INF/classes/"/>
+			<include name="web/WEB-INF/lib/"/>
+			<include name="lib/"/>
+			<include name="*"/>
+			<include name="src/*"/>
+			<include name="database/"/>
+			<include name="xml/"/>
+			<include name="tools/"/>
+			<include name="data-sets/"/>
+		</jar>
+	</target>
+
+	<!-- ========================================
+          Packages the M2 document driver JAR
+         ======================================== -->
+	<target name="m2doc" depends="compile" description="Packages the M2 document driver JAR into m2doc.jar">
+		<!-- generate a jar file including all classes and xml files -->
+		<jar basedir="${build.outputDir}" destfile="${build.dir}/m2doc.jar">
+			<include  name="com/m2/core/TrackableError.class"/>
+			<include  name="com/m2/core/UncheckedException.class"/>
+			<include  name="com/m2/document/*.class"/>
+			<include  name="com/m2/document/impl/*.class"/>
+		</jar>
+	</target>
+
+	<!-- ========================================
+	          Packages the Firm mover tool JAR
+	     ======================================== -->
+	<target name="mover" depends="compile,compile-unit-tests,compile-tools" description="Packages the firm mover tool into mover.jar">
+		<copy todir="${build.tools.output.dir}">
+			<fileset dir="${tools.src.dir}/src" excludes="**/*.java" />
+		</copy>
+		<jar basedir="${build.tools.output.dir}" destfile="${tools.output.dir}/mover.jar">
+			<include  name="com/m2/tools/mover/**"/>
+		</jar>
+	</target>
+
+	<!-- ========================================
+          Packages a JAR for QA Automation support
+     ======================================== -->
+	<target name="qa-automation" depends="compile" description="Packages a JAR for use by QA automation">
+		<property name="qa.automation.cms1500.bean.pattern" 		value="com/m2/billing/cms1500/bean/*" />
+		<property name="qa.automation.pdf.filler.pattern" 			value="com/modmed/common/pdf/filler/annotation/*" />
+		<property name="qa.automation.base.dto.pattern" 			value="com/modmed/common/dto/*" />
+		<property name="qa.automation.common.question.pattern" 		value="com/modmed/common/question/**" />
+		<property name="qa.automation.common.task.pattern" 			value="com/modmed/common/task/**" />
+		<property name="qa.automation.resource.task.pattern" 		value="com/modmed/ws/v3/resource/task/**" />
+		<property name="qa.automation.resource.question.pattern" 	value="com/modmed/ws/v3/resource/question/**" />
+		<property name="qa.automation.mav.statement.pattern" 		value="com/m2/mav/statement/bean/*" />
+		<property name="qa.automation.util" 						value="com/m2/util/*" />
+		<property name="qa.automation.dto.linked.pattern"			value="com/m2/dto/linked/*" />
+		<property name="qa.automation.x12.pattern" 					value="com/m2/mav/edi/x12/**" />
+
+		<jar destfile="${build.dir}/qa-automation.jar">
+			<fileset dir="build/ema/WEB-INF/classes">
+				<include name="${qa.automation.cms1500.bean.pattern}"/>
+				<include name="${qa.automation.pdf.filler.pattern}"/>
+				<include name="${qa.automation.base.dto.pattern}"/>
+				<include name="${qa.automation.common.question.pattern}" />
+				<include name="${qa.automation.common.task.pattern}" />
+				<include name="${qa.automation.resource.task.pattern}" />
+				<include name="${qa.automation.resource.question.pattern}" />
+				<include name="${qa.automation.mav.statement.pattern}"/>
+				<include name="${qa.automation.util}"/>
+				<include name="${qa.automation.dto.linked.pattern}"/>
+				<include name="${qa.automation.x12.pattern}"/>
+
+			</fileset>
+			<fileset dir=".">
+				<include name="src/${qa.automation.cms1500.bean.pattern}"/>
+				<include name="src/${qa.automation.pdf.filler.pattern}"/>
+				<include name="src/${qa.automation.base.dto.pattern}"/>
+				<include name="src/${qa.automation.common.question.pattern}" />
+				<include name="src/${qa.automation.common.task.pattern}" />
+				<include name="src/${qa.automation.resource.task.pattern}" />
+				<include name="src/${qa.automation.resource.question.pattern}" />
+				<include name="src/${qa.automation.mav.statement.pattern}"/>
+				<include name="src/${qa.automation.util}"/>
+				<include name="src/${qa.automation.dto.linked.pattern}"/>
+				<include name="src/${qa.automation.x12.pattern}"/>
+			</fileset>
+		</jar>
+	</target>
+
+	<!-- =====================================
+          FindBugs - static bytecode analysis
+         ===================================== -->
+	<target name="findbugs" depends="compile">
+		<taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">
+			<classpath>
+				<fileset dir="lib">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</taskdef>
+		<findbugs home="lib" reportlevel="low" output="xml:withMessages" failOnError="true" outputFile="${reports}/findbugs.xml" jvmArgs="-Xms256m -Xmx800m">
+			<class location="${build.outputDir}" />
+			<auxClasspath refId="compile.classpath" />
+			<sourcePath path="${src.dir}" />
+		</findbugs>
+	</target>
+
+	<!-- =================================
+          PMD - source analysis
+         ================================= -->
+	<target name="pmd">
+		<taskdef name="pmd" classname="net.sourceforge.pmd.ant.PMDTask">
+			<classpath>
+				<fileset dir="lib">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</taskdef>
+		<pmd rulesetfiles="java-controversial,java-basic,java-imports,java-braces,java-strings,java-naming,java-codesize,java-design,java-finalizers,java-logging-java,java-unusedcode">
+			<formatter type="xml" toFile="${reports}/pmd.xml"/>
+			<fileset dir="${src.dir}">
+				<include name="**/*.java"/>
+			</fileset>
+		</pmd>
+	</target>
+
+	<!-- =================================
+          CPD - Copy and paste detector
+         ================================= -->
+	<target name="cpd">
+		<cpd minimumTokenCount="100" outputFile="${reports}/cpd.xml" format="xml">
+			<fileset dir="${src.dir}">
+				<include name="**/*.java" />
+			</fileset>
+		</cpd>
+	</target>
+
+	<target name="configure-production-files" depends="compile">
+		<echo>Setting permissions on file: ema.dbcp.properties</echo>
+		<chmod file="${build.outputDir}/ema.dbcp.properties" perm="400"/>
+	</target>
+
+	<!-- ==================== Database targets =================================== -->
+
+	<!-- Drops then recreates the database with an empty changelog table -->
+	<target name="db-clean-just-ema-and-changelog"
+			depends="db-drop-ema-tables, db-create-changelog-table"
+			description="Drops just the EMA tables and the recreates database with changelog table">
+	</target>
+
+	<target name="db-clean"
+			depends="db-drop-database, db-create-database, db-create-changelog-table"
+			description="Drops and creates database with changelog table">
+	</target>
+
+	<target name="db-clean-install"
+			depends="db-drop-database, db-create-database, db-create-changelog-table, db-update-database, db-apply-xml, ema-db-fdb-load-full-latest"
+			description="Drops and recreates database including FDB data so can take a while">
+	</target>
+
+	<target name="db-quick-install"
+			depends="db-drop-ema-tables, db-drop-changelog-table, db-create-changelog-table, db-update-database, db-apply-xml"
+			description="Drops and creates all database tables except for FDB data">
+		<echo message="Dropping and reloading tables except for FDB drug tables"/>
+	</target>
+
+	<!-- Drops EMA tables only, leaving FDB tables intact.
+	     Used by db-quick-install as dropping and loading the FDB data takes a while.
+	 -->
+	<target name="db-drop-ema-tables">
+		<run-sql file="${db.sql.dir}/drop_all_ema_tables.sql"/>
+	</target>
+
+	<!-- Creates the changelog table -->
+	<target name="db-create-changelog-table">
+		<run-sql file="${db.m2dbdeploy.scripts.dir}/createSchemaVersionTable.mysql.sql"/>
+	</target>
+
+	<!-- Drops the changelog table -->
+	<target name="db-drop-changelog-table">
+		<sql driver="${db.driver}" url="${db.url}"
+			 userid="${db.user}" password="${db.password}" print="true" classpathref="mysql.classpath">
+			DROP TABLE IF EXISTS changelog;
+		</sql>
+	</target>
+
+	<target name="db-update-database"
+			depends="db-generate-change-script,db-apply-change-script"
+			description="Updates database applying any necessary change scripts"/>
+
+	<!--
+		Creates a SQL script named update.sql that contains all change scripts that are to be applied.
+	    The script can then be run against the database by executing db-apply-change-script.
+	  -->
+	<target name="db-generate-change-script" description="Generate the SQL update script">
+		<dbdeploy driver="${db.driver}"
+				  url="${db.url}"
+				  userid="${db.user}"
+				  password="${db.password}"
+				  dir="${db.deltas.dir}"
+				  outputfile="${build.dir}/update.sql"
+				  undoOutputfile="${build.dir}/undo.sql"
+				  dbms="mysql"
+		/>
+		<echo message="SQL update script saved as update.sql"/>
+	</target>
+
+	<!--
+		Runs the generated update.sql script against the database.
+	  -->
+	<target name="db-apply-change-script" description="Applies previously generated change script">
+		<exec executable="${mysql}" input="${build.dir}/update.sql" failonerror="true">
+			<arg value="-u${db.user}" />
+			<arg value="-h${db.hostname}" />
+			<arg value="-P${db.port}"/>
+			<arg value="-p${db.password}" />
+			<arg value="${db.name}" />
+		</exec>
+	</target>
+
+	<target name="db-show-changelog" description="Shows content of changelog table">
+		<sql driver="${db.driver}" url="${db.url}"
+			 userid="${db.user}" password="${db.password}" print="true" classpathref="mysql.classpath">
+			SELECT * FROM changelog;
+		</sql>
+	</target>
+
+	<target name="db-drop-database">
+		<echo message="About to drop ${db.name}"/>
+		<sql driver="${db.driver}" url="${jdbc.url}"
+			 userid="${db.user}" password="${db.password}" print="true" classpathref="mysql.classpath">
+			DROP DATABASE IF EXISTS ${db.name};
+		</sql>
+		<echo message="About to drop ${build_db.name}"/>
+		<sql driver="${db.driver}" url="${jdbc.url}"
+			 userid="${db.user}" password="${db.password}" print="true" classpathref="mysql.classpath">
+			DROP DATABASE IF EXISTS ${build_db.name};
+		</sql>
+	</target>
+
+	<target name="db-create-database">
+		<echo message="About to create ${db.name}"/>
+		<sql driver="${db.driver}" url="${jdbc.url}"
+			 userid="${db.user}" password="${db.password}" print="true" classpathref="mysql.classpath">
+			CREATE DATABASE ${db.name}
+			DEFAULT CHARACTER SET utf8
+			DEFAULT COLLATE utf8_general_ci;
+		</sql>
+		<echo message="About to create ${build_db.name}"/>
+		<sql driver="${db.driver}" url="${jdbc.url}"
+			 userid="${db.user}" password="${db.password}" print="true" classpathref="mysql.classpath">
+			CREATE DATABASE ${build_db.name}
+			DEFAULT CHARACTER SET utf8
+			DEFAULT COLLATE utf8_general_ci;
+			CREATE table build.info (updated VARCHAR(30), artifacts_url VARCHAR(300), version VARCHAR(30), webapp VARCHAR(30) DEFAULT NULL);
+		</sql>
+	</target>
+
+	<!-- ==================== DataSets, XML Parser and Init Firm targets ==================== -->
+	<target name="db-apply-data-sets" description="Loads flat file data sets into database" depends="git-commit-id,create-static-data-sets-tables">
+		<java classname="com.m2.dataset.DataSetsParser" fork="true" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}" />
+			<sysproperty key="skip.data-sets.list" value="${skip.data-sets.list}" />
+			<sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+			<sysproperty key="skip.md5check" value="${skip.md5check}" />
+			<sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+			<sysproperty key="cayenne.config" value="cayenne-installer.xml"/>
+			<classpath refid="db.create.classpath" />
+			<jvmarg value="-Xmx8g" />
+			<jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+			<jvmarg value="-Dremote.illustration.merger.enabled=true"/><!-- Reduce memory usage -->
+			<!--
+			<jvmarg value="-XX:-UseGCOverheadLimit" />
+			<jvmarg value="-XX:+UseConcMarkSweepGC" />
+			-->
+
+			<!--
+			<jvmarg value="-Xdebug" />
+			<jvmarg value="-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9090"/>
+			-->
+
+			<!--   <jvmarg value="-agentpath:/Applications/JProfiler.app/Contents/Resources/app/bin/macos/libjprofilerti.jnilib=port=8849 "/> -->
+
+		</java>
+		<antcall target="stripes-resources" />
+	</target>
+
+	<!-- ==================== Compendium Updater ==================== -->
+	<target name="compendium-updater-quest" description="Loads compendium file from quest">
+		<java classname="com.m2.lab.compendium.CompendiumUpdater" fork="true" failonerror="true">
+			<arg value="quest"/>
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}" />
+			<sysproperty key="skip.data-sets.list" value="${skip.data-sets.list}" />
+			<sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+			<sysproperty key="skip.md5check" value="${skip.md5check}" />
+			<sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+			<classpath refid="db.create.classpath" />
+			<jvmarg value="-Xmx8g" />
+			<jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+		</java>
+	</target>
+
+	<target name="compendium-updater-labcorp" description="Loads compendium file from labcorp">
+		<java classname="com.m2.lab.compendium.CompendiumUpdater" fork="true" failonerror="true">
+			<arg value="labcorp"/>
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}" />
+			<sysproperty key="skip.data-sets.list" value="${skip.data-sets.list}" />
+			<sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+			<sysproperty key="skip.md5check" value="${skip.md5check}" />
+			<sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+			<classpath refid="db.create.classpath" />
+			<jvmarg value="-Xmx8g" />
+			<jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+		</java>
+	</target>
+
+	<!-- ==================== Initialize Global Firm IDs ==================== -->
+	<target name="global-id" description="Initializes global ids for firms" depends="db-setup-global-identification">
+		<install beans="FirmGlobalIdentification"/>
+	</target>
+	<!-- ==================== Initialize Global Firm IDs Without Access to ema_static ==================== -->
+	<target name="global-id-no-setup" description="Initializes global ids for firms, but does not attempt to write to ema_static">
+		<install beans="FirmGlobalIdentification"/>
+	</target>
+
+	<!-- ==================== Initialize demo1 Firm with MMPM configured ==================== -->
+	<target name="db-create-mmpm-firm" description="Create MMPM firm">
+		<init-mmpm-firm name="mmpm" prefix="mmpm" medicaldomain="DERMATOLOGY" />
+	</target>
+
+	<target name="db-apply-xml" description="Loads biopsy log, HPI and virtual exam room data from XML files into database" depends="git-commit-id">
+		<echo message="Starting db-apply-xml with ve.xml.versioning=${ve.xml.versioning}"/>
+		<java classname="com.m2.installer.XMLParsers" fork="true" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}" />
+			<sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+			<sysproperty key="skip.md5check" value="${skip.md5check}" />
+			<sysproperty key="medical.dir" value="${medical.dir}" />
+			<sysproperty key="disable.translations" value="${disable.translations}" />
+			<sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+			<sysproperty key="cayenne.config" value="cayenne-installer.xml"/>
+			<sysproperty key="beanHelper.disableSorting" value="true"/>
+			<sysproperty key="parseVe.lookupProcedureMetadataOptionsFromDb" value="false"/>
+			<sysproperty key="heavy.task.thread.count" value="${heavy.task.thread.count}"/>
+			<sysproperty key="light.task.thread.count" value="${light.task.thread.count}"/>
+			<sysproperty key="ve.xml.versioning" value="${ve.xml.versioning}"/>
+			<sysproperty key="spring.cloud.config.uri" value="${cloud.config.uri}"/>
+			<sysproperty key="spring.cloud.config.enabled" value="${cloud.config.enabled}"/>
+			<sysproperty key="spring.application.name" value="${application.name}"/>
+			<sysproperty key="spring.profiles.active" value="${springprofiles.active}"/>
+
+
+			<classpath refid="db.create.classpath"/>
+
+			<!-- MUCH faster in serial than parallel -->
+			<arg value="-s"/>
+			<jvmarg value="-Xmx${jvm.max.memory}" />
+			<jvmarg value="-XX:MaxMetaspaceSize=512m"/>
+			<jvmarg value="-verbose:gc"/>
+			<jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStore=${truststore.location}"/>
+			<jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStorePassword=${truststore.password}"/>
+			<jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStoreType=${truststore.type}"/>
+
+
+			<jvmarg value="-XX:+UseConcMarkSweepGC"/>
+
+			<!-- keep at most 20% padding between max heap and heap -->
+			<jvmarg value="-XX:MinHeapFreeRatio=20"/>
+			<jvmarg value="-XX:MaxHeapFreeRatio=20"/>
+
+			<jvmarg value="-Dremote.illustration.merger.enabled=true"/>
+
+			<!--
+			<jvmarg value="-XX:+HeapDumpOnOutOfMemoryError"/>
+			<jvmarg value="-XX:HeapDumpPath=~/heapdump"/>
+			<jvmarg value="-XX:-UseGCOverheadLimit"/>
+			<jvmarg value="-XX:+UseConcMarkSweepGC"/>
+			-->
+
+			<!--
+            <jvmarg value="-Xdebug"/>
+            <jvmarg value="-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=9090"/>
+            -->
+		</java>
+	</target>
+
+	<target name="db-apply-xml-no-md5-check" description="calls db-apply-xml without doing an md5 check">
+		<property name="skip.md5check" value="true" />
+		<antcall target="db-apply-xml" />
+	</target>
+
+	<target name="db-apply-xml-nojsvalidation" description="calls db-apply-xml without jsvalidation">
+		<property name="skip.jsvalidation" value="true" />
+		<antcall target="db-apply-xml" />
+	</target>
+
+	<target name="pdf-diagnosis-parser-tool" description="com.m2.util.PDFDiagnosisParser">
+		<java classname="com.m2.util.PDFDiagnosisParser" fork="true" maxmemory="4096m" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+			<classpath refid="db.create.classpath"/>
+			<classpath refid="test.classpath"/>
+			<jvmarg value="-Dstart.date=${start.date}"/>
+			<jvmarg value="-Dend.date=${end.date}"/>
+			<jvmarg value="-Dstart.from.chart.note.id=${start.from.chart.note.id}"/>
+			<jvmarg value="-Dchart.note.filter.file=${chart.note.filter.file}"/>
+		</java>
+	</target>
+
+	<target name="db-create-firms" depends="db-load-demo-firms"
+			description="Create all types of demo firms, then setup global id, which requires write access to ema_static.">
+		<antcall target="global-id" />
+	</target>
+
+	<target name="db-load-demo-firms" depends="db-load-snomed"
+			description="Creates the demo firms. Aggregates the individual creates which are convenient for creating firms one at a time as may need to be done in QA, emademo, and other places we can't run dev quck.">
+		<install beans="InitDemo.demo,FacilityInstaller.demo,ErxInstaller.demo
+	   		InitDemo.derm,FacilityInstaller.derm,ErxInstaller.derm
+			InitDemo.mavderm,FacilityInstaller.mavderm,ErxInstaller.mavderm
+	   		InitDemo.ophth,FacilityInstaller.ophth,ErxInstaller.ophth
+			InitDemo.mavophth,FacilityInstaller.mavophth,ErxInstaller.mavophth
+	   		InitDemo.opto,FacilityInstaller.opto,ErxInstaller.opto
+	   		InitDemo.plastics,FacilityInstaller.plastics,ErxInstaller.plastics
+	   		InitDemo.cosmetic,FacilityInstaller.cosmetic,ErxInstaller.cosmetic
+	   		InitDemo.ortho,FacilityInstaller.ortho,ErxInstaller.ortho
+	   		InitDemo.pain,FacilityInstaller.pain,ErxInstaller.pain
+	   		InitDemo.ent,FacilityInstaller.ent,ErxInstaller.ent
+	   		InitDemo.gi,FacilityInstaller.gi,ErxInstaller.gi
+			InitDemo.rheum,FacilityInstaller.rheum,ErxInstaller.rheum
+			InitDemo.urology,FacilityInstaller.urology,ErxInstaller.urology
+			InitDemo.multi,FacilityInstaller.multi,ErxInstaller.multi
+	   		"/>
+	</target>
+
+	<target name="db-create-loadtest" description="Loads tons of test data">
+		<install beans="InitMassiveTest"/>
+	</target>
+
+	<!--
+		Runs the token replaced load_snomed.sql script against the database.
+	  -->
+	<target name="db-load-snomed" description="Load snomed code into ema">
+		<pathconvert targetos="unix" property="basedir.unix">
+			<path location="${basedir}"/>
+		</pathconvert>
+		<copy todir="${build.dir}" overwrite="true">
+			<fileset dir="${basedir}/database/snomed">
+				<include name="**/*.sql"/>
+			</fileset>
+			<filterset>
+				<filter token="basedir" value="${basedir.unix}" />
+				<filter token="snomed.file" value="${snomed.file}" />
+				<filter token="icd9_snomed.file1" value="${icd9_snomed.file1}" />
+				<filter token="icd9_snomed.fileM" value="${icd9_snomed.fileM}" />
+			</filterset>
+		</copy>
+		<exec executable="${mysql}" input="${build.dir}/load_snomed.sql" failonerror="true">
+			<arg value="-u${db.user}" />
+			<arg value="-h${db.hostname}" />
+			<arg value="-P${db.port}"/>
+			<arg value="-p${db.password}" />
+			<arg value="${db.name}" />
+		</exec>
+	</target>
+
+	<!--
+		Runs the load_nist_mu2_profiles.sql script against the database.
+	 -->
+	<target name="load_mu2_profiles" description="Load 21 profiles for nist mu2 validation">
+		<run-sql file="${basedir}/database/mu2/load_nist_mu2_profiles.sql"/>
+		<run-sql file="${basedir}/database/mu2/load_mu2_cancer_profiles.sql"/>
+		<run-sql file="${basedir}/database/mu2/load_nist_cancer_cat1_profiles.sql"/>
+		<run-sql file="${basedir}/database/mu2/load_nist_cancer_cat2_profiles.sql"/>
+		<run-sql file="${basedir}/database/mu2/load_nist_cancer_cat3_profiles.sql"/>
+		<run-sql file="${basedir}/database/mu2/load_nist_cancer_cat4_profiles.sql"/>
+		<run-sql file="${basedir}/database/mu2/load_nist_cancer_cat5_profiles.sql"/>
+		<run-sql file="${basedir}/database/mu2/load_nist_cancer_cat6_profiles.sql"/>
+		<run-sql file="${basedir}/database/mu2/add_derm_history.sql"/>
+		<install beans="InitMu2Erx" />
+	</target>
+
+	<!-- ==================== Deploy targets ==================== -->
+
+	<target name="deploy-ema" description="Deploys the EMA web app to Tomcat">
+		<deploy-war name="ema"/>
+	</target>
+
+	<target name="expand-ema" description="Expands the WAR file under Tomcat">
+		<expand-war name="ema"/>
+	</target>
+
+	<target name="load-rxnorm" description="Load RxNorm tables">
+		<ant antfile="../rxnorm-db/build.xml" inheritall="false"/>
+	</target>
+
+	<target name="db-load-rgp" description="Load RGP tables">
+		<ant antfile="../rgp-product-db/build.xml" inheritall="false"/>
+	</target>
+
+	<target name="load-ncci" description="Deprecated, see data-set - Load NCCI tables">
+		<ant antfile="../ncci-db/build.xml" inheritall="false"/>
+	</target>
+
+	<target name="install-third-party-data-sources" description="Installs additional data sources such as RxNorm, CMS, and RGP">
+		<!-- populate external data sources -->
+		<ant antfile="../formulary-cms-db/build.xml" inheritall="false"/>
+		<ant antfile="../rxnorm-db/build.xml" inheritall="false"/>
+		<ant antfile="../rgp-product-db/build.xml" inheritall="false"/>
+	</target>
+
+	<target name="install-mu2-test-data" depends="compile-tools" description="Updates database with data required for Meaningful Use 2 (MU2) testing.">
+		<java classname="com.m2.tools.testdata.mu2.patient.Mu2TestPatientCreator" fork="true" maxmemory="768m" failonerror="true">
+			<classpath>
+				<path refid="tools.classpath"/>
+			</classpath>
+		</java>
+	</target>
+
+	<target name="install-mu2-cda-test-data" depends="compile-tools" description="Updates database with data required for MU2 CDA testing.">
+		<java classname="com.m2.tools.testdata.mu2.patient.Mu2CdaTestPatientCreator" fork="true" maxmemory="4096m" failonerror="true">
+			<classpath>
+				<path refid="tools.classpath"/>
+			</classpath>
+		</java>
+	</target>
+
+	<target name="run-tests-mu2-cda-test-data" depends="compile-tools" description="Runs tests against data required for MU2 CDA testing.">
+		<java classname="com.m2.tools.testdata.mu2.patient.Mu2CdaTestPatientCreator" fork="true" maxmemory="4096m" failonerror="true">
+			<classpath>
+				<path refid="tools.classpath"/>
+			</classpath>
+			<arg value="run-tests"/>
+		</java>
+	</target>
+
+	<target name="install-mu2-useability-data" depends="compile-unit-tests,compile-tools" description="Updates database with data required for Meaningful Use 2 (MU2) useability testing.">
+		<testng verbose="0">
+			<classpath>
+				<pathelement location="${build.test.output.dir}" />
+				<pathelement location="${build.outputDir}" />
+				<path refid="test.classpath"/>
+			</classpath>
+			<xmlfileset dir="${basedir}" includes="integration-test/com/m2/tools/resource/mu2/useability/useability-testng.xml"/>
+			<jvmarg value="-Xmx1024m" />
+		</testng>
+	</target>
+
+	<target name="check-env" description="Checks environment settings are correct before running a build">
+
+		<check-http-property/>
+
+		<!-- Check necessary directories exist -->
+		<check-exists dir="/var/ema/firms"/>
+		<check-exists dir="/var/ema/surescripts/pharmacy"/>
+		<check-exists dir="/var/ema/surescripts/prescriber"/>
+		<check-exists dir="${tomcat.dir}/webapps"/>
+
+		<!-- Check JDBC database connection -->
+		<check-db-connection/>
+
+		<!-- TODO Check mysql client binary exists -->
+
+	</target>
+
+
+	<target name="create-gi-uro-rheum-beta-firms" description="creates gi, uro, and rheum beta firms for gi, uro, and rheum beta boxes">
+		<create-beta-firm prefix="cge" medicaldomain="GI" medicalsubdomain="GI" firstname="Elliot" lastname="Ellis" username="eellis" password="Changeme1"/>
+		<create-beta-firm prefix="utgu" medicaldomain="UROLOGY" medicalsubdomain="UROLOGY" firstname="Nadeem" lastname="Dhanani" username="ndhanani" password="Changeme1"/>
+		<create-beta-firm prefix="arth" medicaldomain="RHEUMATOLOGY" medicalsubdomain="RHEUMATOLOGY" firstname="Elana" lastname="Oberstein" username="eoberstein" password="Password1"/>
+	</target>
+
+	<target name="set_integration_ONLY_FOR_DEVELOPMENT" description="Set the integration admin properties. NOTE: this should be used only for development">
+		<!--
+		<run-sql file="${db.sql.dir}/set_integration_ONLY_FOR_DEVELOPMENT.sql"/>
+		-->
+	</target>
+
+	<target name="test_labs_ONLY_FOR_DEVELOPMENT" description="Load test labs. NOTE: this should be used only for development">
+		<run-sql file="${db.sql.dir}/test_labs_ONLY_FOR_DEVELOPMENT.sql"/>
+	</target>
+
+	<!-- ==================== Macros ==================== -->
+
+	<macrodef name="set-property" description="Override a property value">
+		<attribute name="name"/>
+		<attribute name="value"/>
+		<sequential>
+			<echo message="@{name}: @{value}" />
+			<script language="javascript">
+				<![CDATA[
+                project.setProperty("@{name}", "@{value}");
+                ]]>
+			</script>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="delete-web-app" description="Deletes the named WAR file and directory">
+		<attribute name="name"/>
+		<sequential>
+			<delete dir="${tomcat.dir}/webapps/@{name}"/>
+			<delete>
+				<fileset dir="${tomcat.dir}/webapps">
+					<include name="@{name}.war"/>
+				</fileset>
+			</delete>
+			<delete failonerror="false">
+				<fileset dir="${tomcat.dir}/conf/Catalina/localhost">
+					<include name="@{name}.xml"/>
+				</fileset>
+			</delete>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="deploy-war">
+		<attribute name="name" default="ema"/>
+		<sequential>
+			<property name="tomcat.webapps.dir" value="${tomcat.dir}/webapps"/>
+			<ac:if>
+				<not>
+					<available file="${tomcat.webapps.dir}" type="dir"/>
+				</not>
+				<ac:then>
+					<fail message="${tomcat.webapps.dir} does not exist. Check tomcat.dir property is correct."/>
+				</ac:then>
+			</ac:if>
+			<copy file="${build.dir}/@{name}.war"
+				  tofile="${tomcat.webapps.dir}/@{name}.war"
+				  overwrite="true"/>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="expand-war">
+		<attribute name="name" default="ema"/>
+		<sequential>
+			<property name="tomcat.webapps.dir" value="${tomcat.dir}/webapps"/>
+			<ac:if>
+				<not>
+					<available file="${tomcat.webapps.dir}" type="dir"/>
+				</not>
+				<ac:then>
+					<fail message="${tomcat.webapps.dir} does not exist. Check tomcat.dir property is correct."/>
+				</ac:then>
+			</ac:if>
+			<unzip src="${build.dir}/@{name}.war"
+				   dest="${tomcat.webapps.dir}/@{name}"
+				   overwrite="true"/>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="check-exists" description="Checks that the given directory exists">
+		<attribute name="dir"/>
+		<sequential>
+			<echo message="Checking @{dir} exists"/>
+			<ac:if>
+				<not>
+					<available file="@{dir}" type="dir"/>
+				</not>
+				<ac:then>
+					<fail message="@{dir} does not exist"/>
+				</ac:then>
+			</ac:if>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="check-http-property" description="Checks the http.protocol property is set to https">
+		<sequential>
+			<echo message="Checking http.protocol property in ${src.dir}/ema.properties is https"/>
+			<loadproperties srcfile="${src.dir}/ema.properties">
+				<filterchain>
+					<linecontains>
+						<contains value="http.protocol"/>
+					</linecontains>
+				</filterchain>
+			</loadproperties>
+			<condition property="httpProtocol">
+				<equals arg1="${http.protocol}" arg2="https"/>
+			</condition>
+			<fail unless="${httpProtocol}" message="The http.protocol property in ${src.dir}/ema.properties is not set to https"/>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="check-db-connection">
+		<sequential>
+			<echo message="Checking JDBC database connection properties"/>
+			<sql driver="${db.driver}" url="${db.url}"
+				 userid="${db.user}" password="${db.password}" print="false" classpathref="mysql.classpath">
+				SELECT 1;
+			</sql>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="rename-demo-firm">
+		<attribute name="to" />
+		<sequential>
+			<sql driver="${db.driver}" url="${db.url}"
+				 userid="${db.user}" password="${db.password}" print="false" classpathref="mysql.classpath">
+				UPDATE firm SET url_prefix = '@{to}' WHERE url_prefix = 'demo';
+			</sql>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="run-sql" description="Executes the given SQL file using the MySQL client">
+		<attribute name="file"/>
+		<sequential>
+			<exec executable="${mysql}" input="@{file}" failonerror="true">
+				<arg value="-u${db.user}"/>
+				<arg value="-h${db.hostname}"/>
+				<arg value="-P${db.port}"/>
+				<arg value="-p${db.password}"/>
+				<arg value="${db.name}"/>
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="ema-static-run-sql" description="Executes the given SQL file in ema-static using the MySQL client">
+		<attribute name="file"/>
+		<sequential>
+			<exec executable="${mysql}" input="@{file}" failonerror="true">
+				<arg value="-u${static.db.user}"/>
+				<arg value="-h${static.db.hostname}"/>
+				<arg value="-P${static.db.port}"/>
+				<arg value="-p${static.db.password}"/>
+				<arg value="${static.db.name}"/>
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="init-mmpm-firm">
+		<attribute name="name"/>
+		<attribute name="prefix"/>
+		<attribute name="medicalDomain"/>
+		<attribute name="medicalSubdomain"  default="@{medicalDomain}"/>
+		<attribute name="cayenneConfig" default="cayenne-installer.xml"/>
+		<sequential>
+			<java classname="com.m2.install.installable.InitMmpmFirm" fork="true" maxmemory="2024m" failonerror="true">
+				<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+				<sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+				<sysproperty key="cayenne.config" value="@{cayenneConfig}"/>
+				<classpath refid="db.create.classpath"/>
+				<jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+				<arg value="@{name}"/>
+				<arg value="@{prefix}"/>
+				<arg value="@{medicalDomain}"/>
+				<arg value="@{medicalSubdomain}"/>
+			</java>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="init-firm">
+		<attribute name="name"/>
+		<attribute name="prefix"/>
+		<attribute name="medicalDomain"/>
+		<attribute name="medicalSubdomain"  default="@{medicalDomain}"/>
+		<attribute name="cayenneConfig" default="cayenne-installer.xml"/>
+		<sequential>
+			<java classname="com.m2.install.installable.InitDemo" fork="true" maxmemory="2024m" failonerror="true">
+				<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+				<sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+				<sysproperty key="cayenne.config" value="@{cayenneConfig}"/>
+				<classpath refid="db.create.classpath"/>
+				<jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+				<arg value="@{name}"/>
+				<arg value="@{prefix}"/>
+				<arg value="@{medicalDomain}"/>
+				<arg value="@{medicalSubdomain}"/>
+			</java>
+			<java classname="com.m2.install.installable.FacilityInstaller" fork="true" maxmemory="2024m" failonerror="true">
+				<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+				<sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+				<sysproperty key="cayenne.config" value="@{cayenneConfig}"/>
+				<classpath refid="db.create.classpath"/>
+				<jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+				<arg value="@{prefix}"/>
+			</java>
+			<java classname="com.m2.install.installable.ErxInstaller" fork="true" maxmemory="2024m" failonerror="true">
+				<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+				<sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+				<sysproperty key="cayenne.config" value="@{cayenneConfig}"/>
+				<classpath refid="db.create.classpath"/>
+				<jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+				<arg value="@{prefix}"/>
+			</java>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="create-sales-firm">
+		<attribute name="prefix"/>
+		<sequential>
+			<java classname="com.m2.install.installable.InitSalesFirmAndFacility" fork="true" maxmemory="2024m" failonerror="true">
+				<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+				<sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+				<classpath refid="db.create.classpath"/>
+				<arg value="@{prefix}"/>
+			</java>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="installer">
+		<attribute name="class"/>
+		<attribute name="max-memory" default="13120m"/>
+		<element name="java-args" optional="true"/>
+		<sequential>
+			<java classname="@{class}" fork="true" maxmemory="@{max-memory}" failonerror="true">
+				<classpath refid="db.create.classpath" />
+				<sysproperty key="spring.config.path" value="install-only.xml" />
+				<sysproperty key="cayenne.config" value="cayenne-installer.xml"/>
+				<sysproperty key="skip.fkcheck" value="${skip.fkcheck}" />
+				<sysproperty key="skip.jsvalidation" value="${skip.jsvalidation}"/>
+				<sysproperty key="log4j.configurationFile" value="log4j2-build.yaml" />
+				<jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStore=${truststore.location}"/>
+				<jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStorePassword=${truststore.password}"/>
+				<jvmarg if:true="${use.truststore}" value="-Djavax.net.ssl.trustStoreType=${truststore.type}"/>
+				<jvmarg value="-XX:MaxMetaspaceSize=1024m" />
+				<jvmarg value="-Duser.timezone=UTC" />
+				<java-args />
+			</java>
+		</sequential>
+	</macrodef>
+
+	<target name="generate-swagger" description="Generates Swagger documentation">
+		<ac:if>
+			<not><isset property="version"/></not>
+			<ac:then>
+				<input message="For which version(s) do you want to generate Swagger documentation?"
+					   validargs="all,1,2,3,abort" addproperty="version"/>
+				<condition property="abort">
+					<equals arg1="${version}" arg2="abort"/>
+				</condition>
+
+				<fail if="abort" message="Aborted by user"/>
+			</ac:then>
+		</ac:if>
+
+		<ac:if>
+			<equals arg1="${version}" arg2="all" casesensitive="false"/>
+			<ac:then>
+				<antcall target="generate-swagger-all"/>
+			</ac:then>
+			<ac:else>
+				<generate-swagger-documentation version="${version}" build="" commit=""/>
+			</ac:else>
+		</ac:if>
+	</target>
+
+	<target name="generate-swagger-all" description="Generates Swagger documentation for all resource paths">
+		<generate-swagger-documentation version="1" build="" commit=""/>
+		<generate-swagger-documentation version="2" build="" commit=""/>
+		<generate-swagger-documentation version="3" build="" commit=""/>
+	</target>
+
+	<target name="generate-swagger-3" description="Generates Swagger documentation version 3 only">
+		<generate-swagger-documentation version="3" build="${env.BUILD_DISPLAY_NAME}" commit="${env.GIT_COMMIT}"/>
+	</target>
+
+	<macrodef name="generate-swagger-documentation">
+		<attribute name="version"/>
+		<attribute name="build"/>
+		<attribute name="commit"/>
+		<sequential>
+			<echo>Generating Swagger documentation for version @{version} endpoints</echo>
+			<java classname="com.modmed.dev.swagger.SwaggerDocumentation" fork="true" maxmemory="1024m" failonerror="true">
+				<classpath refid="tools.classpath"></classpath>
+				<sysproperty key="log4j.configurationFile" value="log4j2-build.yaml" />
+				<arg value="-v"/>
+				<arg value="@{version}"/>
+				<arg value="-s"/>
+				<arg value="${build.dir}/swaggerDocumentation"/>
+				<arg value="-b"/>
+				<arg value="@{build}"/>
+				<arg value="-c"/>
+				<arg value="@{commit}"/>
+			</java>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="create-beta-firm">
+		<attribute name="prefix"/>
+		<attribute name="medicalDomain"/>
+		<attribute name="medicalSubdomain"/>
+		<attribute name="firstname"/>
+		<attribute name="lastname"/>
+		<attribute name="username"/>
+		<attribute name="password"/>
+		<sequential>
+			<java classname="com.m2.install.installable.InitBetaFirmAndFacility" fork="true" maxmemory="768m" failonerror="true">
+				<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+				<sysproperty key="skip.fkcheck" value="${skip.fkcheck}"/>
+				<classpath refid="db.create.classpath"/>
+				<arg value="@{prefix}"/>
+				<arg value="@{medicalDomain}"/>
+				<arg value="@{medicalSubdomain}"/>
+				<arg value="@{firstname}"/>
+				<arg value="@{lastname}"/>
+				<arg value="@{username}"/>
+				<arg value="@{password}"/>
+			</java>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="install">
+		<attribute name="beans"/>
+		<sequential>
+			<installer class="com.m2.install.InstallUtil" max-memory="4096m">
+				<java-args>
+					<arg line="@{beans}"/>
+				</java-args>
+			</installer>
+		</sequential>
+	</macrodef>
+
+	<!--
+	*****************************
+	TEST DATA IMPORTS
+	*****************************
+	-->
+	<!-- import dummy data for surescripts (erx) -->
+	<target name="create-surescripts-dummy-data" description="Applies previously generated change script">
+		<create-surescripts-dummy-data-def />
+		<load-formulary-test-data/>
+	</target>
+
+	<macrodef name="create-surescripts-dummy-data-def">
+		<sequential>
+			<sql driver="${db.driver}" url="${db.url}" userid="${db.user}" password="${db.password}" print="false" classpathref="mysql.classpath">
+				<transaction src="${basedir}/database/test_data/clear_surescripts_test_directories_data.sql"/>
+				<transaction src="${basedir}/database/test_data/ss_pharmacies.txt"/>
+				<transaction src="${basedir}/database/test_data/ss_payer.txt"/>
+			</sql>
+		</sequential>
+	</macrodef>
+
+	<target name="test-data: import-formulary" description="Import prescription formulary data">
+		<load-formulary-test-data/>
+	</target>
+
+	<target name="test-data: load-rx-patients" description="Load profiles">
+		<install beans="LoadRxTestPatients" />
+	</target>
+
+	<macrodef name="load-formulary-test-data">
+		<sequential>
+			<sql driver="${db.driver}" url="${db.url}" userid="${db.user}" password="${db.password}" print="false" classpathref="mysql.classpath">
+				<transaction src="${basedir}/database/test_data/formulary_test_data_103MB.sql"/>
+			</sql>
+		</sequential>
+	</macrodef>
+
+	<target name="0-full-blown-ema-install" description="Install everything to get ema to run on local host.">
+		<!-- build rx project -->
+		<echo message="Running RX builds" />
+		<ant antfile="../rx/build.xml" inheritall="false"/>
+		<ant antfile="../rx/build.xml" target="build-eclipse" inheritall="false"/>
+		<!-- run ema dev-all -->
+		<ant antfile="build.xml" target="dev-all" inheritall="false"/>
+	</target>
+
+	<target name="ema-db-fdb-create-tables" description="Runs fdb create tables">
+		<!-- fdb create tables-->
+		<echo message="Running fdb create tables" />
+		<ant antfile="../drug-db/build.xml" target="db-fdb-create-tables" inheritall="false"/>
+	</target>
+
+	<target name="ema-db-fdb-load-full-latest" description="Runs fdb load full latest">
+		<!-- fdb load full latest-->
+		<echo message="Running fdb load full latest" />
+		<ant antfile="../drug-db/build.xml" target="db-fdb-load-full-latest" inheritall="false"/>
+	</target>
+
+	<target name="a-install" description="Install everything to get ema to run on local host.">
+		<!-- build rx project -->
+		<echo message="Running RX builds" />
+		<ant antfile="../rx/build.xml" inheritall="false"/>
+		<ant antfile="../rx/build.xml" target="build-eclipse" inheritall="false"/>
+		<!-- run ema dev-quick -->
+		<echo message="Running EMA dev-quick" />
+		<ant antfile="build.xml" target="dev-quick" inheritall="false"/>
+		<!-- populate external data sources -->
+		<!-- <ant antfile="./formulary-cms-db/build.xml" inheritall="false"/> -->
+		<!-- <ant antfile="./rxnorm-db/build.xml" inheritall="false"/> -->
+	</target>
+
+	<target name="abb-setup" description="Sets up the ABB Database in ema-static" depends="abb-2-initial-data-load, abb-3-update-db, abb-4-cleanup"/>
+
+
+	<!-- Initial data Loads the ABB Consise Contact Lens database, use the reload-abb-db target to update to current
+	 -->
+	<target name="abb-2-initial-data-load" description="Ophth - populates the ABB database">
+		<gunzip src="${db.dir}/abb/data/ABBMysqlDump.sql.gz"/>
+		<echo message="Populating ABB Database" />
+		<ema-static-run-sql file="${db.dir}/abb/data/ABBMysqlDump.sql"/>
+		<echo message="Cleaning up" />
+		<delete file="${db.dir}/abb/data/ABBMysqlDump.sql">
+		</delete>
+	</target>
+
+	<target name="abb-update-db" description="Update existing abb database" depends="abb-3-update-db,abb-4-cleanup"/>
+
+	<target name="abb-3-update-db" description="Ophth - repopulates the ABB database">
+		<echo message="Generate database Pre Load Statistics"/>
+		<ema-static-run-sql file="${db.dir}/abb/sql/ABBAnalyzeDB.sql"/>
+		<echo message="Updating the ABB Database" />
+		<ema-static-run-sql file="${db.dir}/abb/sql/AbbDataMigration.sql"/>
+		<installer class="com.m2.xml.ParseABBData" max-memory="6g" />
+	</target>
+
+	<target name="abb-4-cleanup">
+		<echo message="Generate database Post Load Statistics"/>
+		<ema-static-run-sql file="${db.dir}/abb/sql/ABBAnalyzeDB.sql"/>
+		<echo message="Clean up after data reload"/>
+		<ema-static-run-sql file="${db.dir}/abb/sql/ABBTweak.sql"/>
+	</target>
+
+	<!-- This target loads data into ema_static -->
+
+	<target name="db-load-ema-static" depends="db-load-lab-smart-forms,db-apply-data-sets,load-rxnorm,db-setup-gudid-device-tables" />
+
+	<!-- This target loads the global identification handling into ema_static -->
+	<target name="db-setup-global-identification" description="Setup global identification handling in EMA static">
+		<echo message="Initializing global identification" />
+		<ema-static-run-sql file="${db.dir}/firm-global-identification/sql/setup_firm_global_identification.sql"/>
+	</target>
+
+	<target name="db-setup-gudid-device-tables" description="Sets up the empty tables for the gudid database, data is found in device-db project">
+		<echo message="Creating empty gudid device tables"/>
+		<ema-static-run-sql file="${db.sql.dir}/gudid/setup_gudid_device_tables.sql" />
+	</target>
+
+	<!-- This target loads the smart form data into ema_static -->
+
+	<target name="db-load-lab-smart-forms">
+		<echo message="Loading the smart form table used by the labs integration"/>
+		<ema-static-run-sql file="${db.sql.dir}/lab_smart_forms/add_lab_smart_form_table.sql"/>
+	</target>
+
+	<!-- This target loads the specialized-registry data into ema_static -->
+	<target name="db-setup-specialized-registry" >
+		<echo message="Loading the specialized registry data"/>
+		<ema-static-run-sql file="${db.sql.dir}/specialized_registry/setup_specialized_registry.sql"/>
+	</target>
+
+	<!-- create the test instance of the etl database -->
+
+	<target name="db-create-test-etl-database">
+		<echo message="------ Creating demo data warehouse ------" />
+		<exec dir="${basedir}/test/dataset/rx-research-button" executable="bash" failonerror="true">
+			<arg value="createEtlTestDb.sh" />
+		</exec>
+		<echo message="------ Done creating demo data warehouse ------" />
+	</target>
+
+	<target name="regen-pdfs" description="Loads a list of chart note ids from /tmp/chartNotesToExamine and regenerates the PDF is 0 or not exists" depends="clean,compile">
+		<java classname="com.m2.util.RegenerateEMAOutputs" fork="true" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<classpath refid="db.create.classpath"/>
+			<jvmarg value="-Xmx1024m" />
+		</java>
+	</target>
+
+	<target name="regen-all-pdfs" description="Loads a list of chart note ids from /tmp/chartNotesToExamine, pulls finalized notes from the directory or generates preliminary notes storing all the outputs in a temporary directory" depends="clean,compile">
+		<java classname="com.m2.util.ChartNotePDFRenderer" fork="true" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<classpath refid="db.create.classpath"/>
+			<jvmarg value="-Xmx1024m" />
+		</java>
+	</target>
+
+	<target name="gen-patient-thumbnails" description="Creates thumbnails of patient primary photos">
+		<java classname="com.m2.util.CreatePatientProfileImageThumbnails" fork="true" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<classpath refid="db.create.classpath"/>
+			<jvmarg value="-Xmx1024m" />
+		</java>
+	</target>
+
+	<target name="select-single-vertical">
+		<property name="enabled.dermatology" value="false" />
+		<property name="enabled.ophthalmology" value="false" />
+		<property name="enabled.optometry" value="false" />
+		<property name="enabled.plastics" value="false" />
+		<property name="enabled.orthopedics" value="false" />
+		<property name="enabled.ent" value="false" />
+		<property name="enabled.gi" value="false" />
+		<property name="enabled.rheum" value="false" />
+		<property name="enabled.urology" value="false" />
+		<property name="enabled.none" value="true" />
+		<input
+				message="Which vertical do you want to build?"
+				validargs="Dermatology,Plastics,Orthopedics,Ophthalmology,GI,ENT,Rheumatology,Urology,Abort"
+				addproperty="selectedVertical"/>
+		<condition property="do.abort">
+			<equals arg1="Abort" arg2="${selectedVertical}"/>
+		</condition>
+		<fail if="do.abort">Build aborted by user.</fail>
+		<script language="javascript">
+			<![CDATA[
+			// Access to Ant-Properties by their names
+			selectedVertical = project.getProperty("selectedVertical");
+			derm = project.getProperty("enabled.dermatology");
+
+	        echo = ema.createTask("echo");
+			echo.setMessage("selectedVertical is "+ selectedVertical);
+			//echo.setMessage("derm is "+ derm);
+	        echo.perform();
+
+			if (selectedVertical == "Dermatology") {
+				project.setProperty("enabled.dermatology", true);
+				project.setProperty("enabled.none", true);
+			}
+			if (selectedVertical == "Plastics") {
+				project.setProperty("enabled.plastics", true);
+				project.setProperty("enabled.none", true);
+			}
+			if (selectedVertical == "Orthopedics") {
+				project.setProperty("enabled.orthopedics", true);
+				project.setProperty("enabled.none", true);
+			}
+			if (selectedVertical == "Ophthalmology") {
+				project.setProperty("enabled.ophthalmology", true);
+				project.setProperty("enabled.optometry", true);
+				project.setProperty("enabled.none", true);
+			}
+			if (selectedVertical == "ENT") {
+				project.setProperty("enabled.ent", true);
+				project.setProperty("enabled.none", true);
+			}
+			if (selectedVertical == "GI") {
+				project.setProperty("enabled.gi", true);
+				project.setProperty("enabled.none", true);
+			}
+			if (selectedVertical == "Rheumatology") {
+				project.setProperty("enabled.rheum", true);
+				project.setProperty("enabled.none", true);
+			}
+			if (selectedVertical == "Urology") {
+				project.setProperty("enabled.urology", true);
+				project.setProperty("enabled.none", true);
+			}
+		]]>
+		</script>
+		<echo file="${src.dir}/ema.properties.local">
+			ema.medicalDomain.dermatology=${enabled.dermatology}
+			ema.medicalDomain.ophthalmology=${enabled.ophthalmology}
+			ema.medicalDomain.optometry=${enabled.optometry}
+			ema.medicalDomain.plastics=${enabled.plastics}
+			ema.medicalDomain.orthopedics=${enabled.orthopedics}
+			ema.medicalDomain.ent=${enabled.ent}
+			ema.medicalDomain.gi=${enabled.gi}
+			ema.medicalDomain.rheumatology=${enabled.rheum}
+			ema.medicalDomain.urology=${enabled.urology}
+			ema.medicalDomain.none=${enabled.none}
+		</echo>
+	</target>
+
+	<target name="select-ophth">
+		<echo file="${src.dir}/ema.properties.local">
+			ema.medicalDomain.dermatology=true
+			ema.medicalDomain.ophthalmology=true
+			ema.medicalDomain.optometry=true
+			ema.medicalDomain.plastics=false
+			ema.medicalDomain.orthopedics=false
+			ema.medicalDomain.ent=false
+			ema.medicalDomain.gi=false
+			ema.medicalDomain.rheumatology=false
+			ema.medicalDomain.urology=false
+			ema.medicalDomain.none=false
+		</echo>
+	</target>
+
+	<target name="populate-mu-1-calc-measures" description="Initializes MU 1 Calc Measures" depends="tools">
+		<echo message="Updating database with MU 1 Calc Measures" />
+		<copy todir="src">
+			<fileset file="${build.tools.output.dir}/ObjectMapper.map.xml" />
+		</copy>
+		<java classname="com.m2.tools.objectmapper.oncatcb.CreateOncAtcbTestUsersForCalcMeasures" fork="true" maxmemory="768m" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}" />
+			<sysproperty key="user.timezone" value="UTC"/>
+			<classpath refid="tools.classpath"/>
+			<classpath refid="test.classpath"/>
+			<classpath path="tools/src"/>
+		</java>
+		<echo message="Updated database with MU 1 Calc Measures" />
+	</target>
+
+	<!-- Virtual Exam Room 3 - combine files into one, and minify -->
+	<target name="dev-mode-check">
+		<condition property="devMode">
+			<equals arg1="${dev.mode}" arg2="true"/>
+		</condition>
+		<echo message="dev.mode=${dev.mode}" />
+	</target>
+
+	<target name="npm-check">
+		<available file="npm"
+				   filepath="${env.PATH}"
+				   property="node.present"/>
+		<ac:if>
+			<ac:isfalse value="${node.present}"/>
+			<ac:then>
+				<fail>NodeJS is required for JavaScript processing.</fail>
+			</ac:then>
+		</ac:if>
+
+		<available file="package-lock.json" property="package.lock.present"/>
+		<ac:if>
+			<ac:isfalse value="${package.lock.present}" />
+			<ac:then>
+				<fail>package-lock.json must be present for JavaScript processing; this should be generated with "npm install" and committed to source control.</fail>
+			</ac:then>
+		</ac:if>
+
+		<ac:if>
+			<ac:not>
+				<ac:isset property="node.install"/>
+			</ac:not>
+			<ac:then>
+				<exec executable="npm" failonerror="true">
+					<arg line="ci" />
+				</exec>
+				<property name="node.install" value="true"/>
+			</ac:then>
+		</ac:if>
+	</target>
+
+	<!-- Run JS compilation - NOTE: This needs to be the last JS target executed because it generates a Service Worker -->
+	<target name="compile-js" depends="npm-check,dev-mode-check">
+		<condition property="npm.args" value="--production --output ${build.dir}" else="--output ${build.dir}">
+			<isfalse value="${devMode}"/>
+		</condition>
+		<exec executable="npm" failonerror="true">
+			<arg line="run js-build --" />
+			<arg line="${npm.args}" />
+		</exec>
+	</target>
+
+	<!--
+	Deletes and recreates the XML Data. do this before you process the XML for a massive speedup
+	-->
+	<target name="db-populate-ema-xml-from-db-snapshot"
+			depends="db-delete-ema-xml-data, db-popuate-ema-xml-data-baseline"
+			description="creates a baseline XML as of the snapshot date. Much faster than parsing all the XML">
+	</target>
+
+	<target name="db-delete-ema-xml-data">
+		<echo message="Cleaning out XML data from DB (you shouldnt care if this is a dev-*)">
+		</echo>
+		<run-sql file="${db.sql.dir}/delete_ema_xml_data.sql"/>
+	</target>
+
+	<target name="db-popuate-ema-xml-data-baseline">
+		<echo message="Prepopulating XML from DB Snapshot">
+		</echo>
+		<exec executable="sh">
+			<arg value="-c"/>
+			<arg value="gunzip &lt; ${db.sql.dir}/ema_xml_final.sql.gz | ${mysql} -u${db.user} -h${db.hostname} -P${db.port} -p${db.password} ${db.name}"/>
+		</exec>
+	</target>
+
+	<target name="javatoios" depends="compile, compile-unit-tests, compile-tools, javatoios-nocompile">
+	</target>
+
+	<target name="javatoios-nocompile">
+		<mkdir dir="iosoutput"/>
+		<delete includeEmptyDirs="true">
+			<fileset dir="iosoutput">
+				<include name="*/**" />
+			</fileset>
+		</delete>
+		<java classname="com.m2.tools.javatoios.JavaToIos" fork="true" maxmemory="768m" failonerror="false">
+			<classpath>
+				<pathelement location="${build.outputDir}"/>
+			</classpath>
+			<classpath refid="tools.classpath"/>
+			<arg value="-classes"/>
+			<arg value="com.m2.dto.linked.MavAppointmentDTO"/>
+			<arg value="-output"/>
+			<arg value="objc"/>
+			<arg value="-outputDir"/>
+			<arg value="iosoutput"/>
+		</java>
+		<zip destfile="iosoutput.zip" basedir="." includes="iosoutput/**/*"/>
+	</target>
+
+	<condition property="classes-parameter-is-set">
+		<isset property="classes"/>
+	</condition>
+
+	<target name="dto-code-generator" description="Generates dtos from domain classes.">
+		<!--
+        Bypass the user input by passing 'classes' as a parameter like this, 'ant dto-code-generator -Dclasses=FirmUser'
+        -->
+		<input message="Enter a space separated set of domain classes (e.g., 'FirmUser' OR 'FirmUser Staff Patient' )" addproperty="classes" />
+		<java classname="com.m2.codehelper.CodeGenerator" fork="false" maxmemory="768m" failonerror="false">
+			<classpath refid="compile.classpath"/>
+			<classpath refid="tools.classpath"/>
+			<arg line="${classes}"/>
+		</java>
+	</target>
+
+	<target name="ver-procedure-bdd-generator" description="Generates BDD files used for automated testing of VER Pdf Linked Procedures" >
+		<input message="VER Xml File:" addproperty="ver.xml.file"/>
+		<input message="BDD Output Folder:" addproperty="bdd.output.folder"/>
+		<java classname="com.m2.installer.VerProcedurePdfBddGenerator" fork="true" failonerror="true">
+			<arg value="${ver.xml.file}"/>
+			<arg value="${bdd.output.folder}"/>
+			<classpath refid="db.create.classpath" />
+			<jvmarg value="-Xmx12g"/>
+			<jvmarg value="-XX:MaxMetaspaceSize=256m"/>
+		</java>
+	</target>
+
+	<target name="migrate-fax-templates" description="Migrates pre EMA 4.8 style fax templates to EMA 4.8 style templates">
+		<installer class="com.m2.installer.fax.template.migration.FaxTemplateConverterInstaller" max-memory="2084m" />
+	</target>
+
+	<target name="regen-pdf-outputs" description="Regenerates bad outputs fromEMA 4.8.4">
+		<installer class="com.m2.installer.RegenerateVisitPdfInstaller" />
+	</target>
+
+	<target name="rerun-finalization" description="Rerun finalization from failed phase">
+		<installer class="com.m2.installer.FinalizationReRunnerInstaller" />
+	</target>
+
+	<target name="run-async-jobs" description="Run Async Jobs">
+		<installer class="com.m2.installer.AsyncJobReRunnerInstaller" />
+	</target>
+
+	<target name="generate-ema-css" depends="npm-check" description="Generate CSS from LESS">
+		<exec executable="npm" failonerror="true">
+			<arg line="run css-build" />
+		</exec>
+	</target>
+
+	<target name="dev-update-build-number">
+		<antcall target="do-if-dev.ema.properties.local-exists">
+		</antcall>
+		<antcall target="do-if-dev.ema.properties.local-doesnt-exist">
+		</antcall>
+	</target>
+
+	<target name="check-if-dev.ema.properties.local-exists">
+		<available file="src/dev.ema.properties.local" property="dev.ema.properties.local.present"/>
+	</target>
+
+	<target name="do-if-dev.ema.properties.local-exists" depends="check-if-dev.ema.properties.local-exists" if="dev.ema.properties.local.present">
+		<exec executable = "git" outputproperty="current.build.number">
+			<arg value = "describe" />
+			<arg value = "--abbrev=0" />
+		</exec>
+		<replaceregexp file="src/dev.ema.properties.local"
+					   match="build.number=(.*)"
+					   replace="build.number=${current.build.number}"
+					   byline="true"/>
+		<loadfile property="dev-build-properties-file" srcFile="src/dev.ema.properties.local"/>
+		<condition property="is-build-version-already-there" value="true" else="false">
+			<contains string="${dev-build-properties-file}" substring="build.number="/>
+		</condition>
+
+		<antcall target="append-build-number-to-dev-ema-properties-local">
+			<param name="is-build-version-already-there" value="${is-build-version-already-there}"/>
+			<param name="current.build.number" value="${current.build.number}"/>
+		</antcall>
+	</target>
+
+	<target name="do-if-dev.ema.properties.local-doesnt-exist" depends="check-if-dev.ema.properties.local-exists" unless="dev.ema.properties.local.present">
+		<exec executable = "git" outputproperty="current.build.number">
+			<arg value = "describe" />
+			<arg value = "--abbrev=0" />
+		</exec>
+		<antcall target="append-build-number-to-dev-ema-properties-local">
+			<param name="is-build-version-already-there" value="false"/>
+			<param name="current.build.number" value="${current.build.number}"/>
+		</antcall>
+	</target>
+
+	<target name="append-build-number-to-dev-ema-properties-local" unless="${is-build-version-already-there}">
+		<echo file="src/dev.ema.properties.local" append="true">
+			build.number=${current.build.number}
+		</echo>
+	</target>
+
+	<target name="create-static-data-sets-tables" description="create data set tables in ema static">
+		<exec executable="${mysql}" input="database/static/create_data_sets_schema.sql" failonerror="true">
+			<arg value="-u${static.db.user}" />
+			<arg value="-h${static.db.hostname}" />
+			<arg value="-P${static.db.port}"/>
+			<arg value="-p${static.db.password}" />
+			<arg value="${static.db.name}" />
+		</exec>
+	</target>
+	<target name="drop-static-data-sets-tables" description="drop data set tables in ema static">
+		<exec executable="${mysql}" input="database/static/drop_data_sets_schema.sql" failonerror="true">
+			<arg value="-u${static.db.user}" />
+			<arg value="-h${static.db.hostname}" />
+			<arg value="-P${static.db.port}"/>
+			<arg value="-p${static.db.password}" />
+			<arg value="${static.db.name}" />
+		</exec>
+	</target>
+
+	<target name="stash-build-get-password" description="sends signal to set jira build">
+		<input message="Enter SSO Password:" addproperty="password">
+			<handler type="secure"/>
+		</input>
+		<stash-build-script password="${password}" status="INPROGRESS"></stash-build-script>
+	</target>
+	<target name="stash-build" depends="stash-build-get-password, compile, compile-unit-tests, run-unit-tests-no-compile-no-halt, stash-build-failed, stash-build-success">
+	</target>
+	<target name="stash-build-no-compile" depends="stash-build-get-password, run-unit-tests-no-compile-no-halt, stash-build-failed, stash-build-success">
+	</target>
+	<target name="stash-build-failed" if="test.failed">
+		<stash-build-script password="${password}" status="FAILED"></stash-build-script>
+		<fail message="build failed"/>
+	</target>
+
+	<target name="stash-build-success" unless="test.failed">
+		<stash-build-script password="${password}" status="SUCCESSFUL"></stash-build-script>
+	</target>
+
+	<macrodef name="stash-build-script">
+		<attribute name="password" default="NOT SET"/>
+		<attribute name="status" default="NOT SET"/>
+		<sequential>
+			<exec executable="/bin/bash" resultproperty="stash.failed.num">
+				<arg value="scripts/stashBuild.sh"/>
+				<arg value="@{status}"/>
+				<arg value="@{password}"/>
+			</exec>
+			<condition property="stash.failed.temp" value="AUTH_ERROR">
+				<equals arg1="125" arg2="${stash.failed.num}"/>
+			</condition>
+			<fail if="stash.failed.temp" message="auth failed"></fail>
+		</sequential>
+	</macrodef>
+
+	<target name="enum-description-tool" depends="compile, compile-unit-tests, compile-tools, enum-description-tool-nocompile">
+	</target>
+
+	<target name="enum-description-tool-nocompile">
+		<java classname="com.m2.tools.enums.EnumDescriptionTool" fork="true" maxmemory="768m" failonerror="false">
+			<classpath>
+				<pathelement location="${build.outputDir}"/>
+			</classpath>
+			<classpath refid="tools.classpath"/>
+			<arg value="com.m2.mav.domain.enums.BillItemStatus"/>
+			<arg value="com.m2.mav.domain.enums.BillStatus"/>
+			<arg value="com.m2.mav.bill.enums.AdjustmentCategory"/>
+			<arg value="com.m2.mav.bill.enums.AdjustmentGroupPrefix"/>
+			<arg value="com.m2.mav.bill.enums.AdjustmentReason"/>
+			<arg value="com.m2.mav.bill.enums.ClaimFormQualifier"/>
+			<arg value="com.m2.mav.bill.enums.ClaimStatusCategory"/>
+			<arg value="com.m2.mav.domain.enums.ClaimFormatType"/>
+			<arg value="com.m2.mav.domain.enums.ClaimType"/>
+			<arg value="com.m2.mav.domain.enums.ClaimStatus"/>
+			<arg value="com.m2.mav.domain.enums.ClaimSubmissionType"/>
+		</java>
+	</target>
+
+	<target name="generate-cayenne-objects">
+		<cgen map="src/EMADomainMap.map.xml"
+			  destDir="src"
+			  makepairs="true"
+			  template="scripts/cayenne-template-subclass.vm"
+			  supertemplate="scripts/cayenne-template-superclass.vm"
+			  superpkg="com.m2.data.auto"
+			  usepkgpath="true">
+		</cgen>
+		<cgen map="src/EMADomainMap.map.xml"
+			  destDir="src/com/m2/domain"
+			  makepairs="false"
+			  usepkgpath="false"
+			  template="scripts/cayenne-template-domain.vm" >
+		</cgen>
+	</target>
+
+
+	<!-- ========================================
+         Check for duplicates in *.properties files
+         ======================================== -->
+	<target name="check4argDir" unless="argDir" description="check that the argDir property is set, and set to default if not" >
+		<property name="argDir" value="${basedir}" />
+	</target>
+
+	<target name="duplicate-property-key-check" depends="check4argDir">
+		<taskdef classpath="${basedir}/lib/build/rscbundlecheck-1.31.jar" resource="task.properties"/>
+		<resourceCheck>
+			<fileset dir="${argDir}">
+				<include name="**/*.properties"/>
+				<!-- exclude the following because they are littered with duplicates -->
+				<exclude name="**/StripesResources*"/>
+				<exclude name="**/questions_en*"/>
+				<exclude name="**/questions_en*"/>
+				<exclude name="**/classes/**"/>
+				<exclude name="**/test-output/**"/>
+			</fileset>
+			<checks>
+				<include name="duplicate key check"/>
+			</checks>
+		</resourceCheck>
+	</target>
+
+	<target name="generate-pqrs-benchmark-xml-from-csv" depends="clean,compile">
+		<antcall target="generate-pqrs-benchmark-xml-from-csv-without-compile" />
+	</target>
+
+	<target name="generate-pqrs-benchmark-xml-from-csv-without-compile">
+		<tstamp>
+			<format property="current.year" pattern="yyyy"/>
+		</tstamp>
+		<input message="Please Enter PQRS Reporting Year:" addproperty="pqrs.benchmark.reporting.year" defaultvalue="${current.year}"/>
+		<input message="Please Enter Path to CSV file:" addproperty="pqrs.benchmark.csv.file.path" defaultvalue="./xml/mips/mips_quality_measure_benchmarks_${current.year}.csv"/>
+		<java classname="com.m2.xml.QualityBenchmarkCsvParser" fork="true" failonerror="true">
+			<sysproperty key="log4j.configurationFile" value="${log4j.build.config}"/>
+			<classpath refid="db.create.classpath"/>
+			<jvmarg value="-Dquality.benchmark.csv.file.path=${pqrs.benchmark.csv.file.path}"/>
+			<jvmarg value="-Dquality.benchmark.reporting.year=${pqrs.benchmark.reporting.year}"/>
+		</java>
+	</target>
+
+</project>
