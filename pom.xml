@@ -82,11 +82,12 @@
                             <sourceFiles>${project.basedir}/src/main/java</sourceFiles>
                             <!-- Include only modified classes -->
 <!--                            <includes>-->
-<!--                                <include>org/example/BankAccount*</include>-->
-<!--                                <include>org/example/Calculator*</include>-->
+<!--                                <include>org/example/DemoCalc*</include>-->
 <!--                            </includes>-->
                             <includes>
+<!--                                <include>${modifiedClasses}*</include>-->
                                 <include>${modifiedClasses}</include>
+
                             </includes>
                         </configuration>
                     </execution>
